@@ -1,63 +1,113 @@
 // src/components/ProductCard.jsx
-const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist = [] }) => {
+import { useNavigate } from 'react-router-dom';
+
+const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist = [], cart = [], isLoggedIn = false }) => {
   const isInWishlist = wishlist?.some(item => item.id === product.id);
+  const isInCart = cart?.some(item => item.id === product.id);
+  const navigate = useNavigate();
+
+  // Check login before actions
+  const requireLogin = (action, data) => {
+    if (!isLoggedIn) {
+      // Store the action and product data to localStorage
+      localStorage.setItem('pendingAction', JSON.stringify({
+        action: action,
+        product: product,
+        quantity: 1
+      }));
+      navigate('/login');
+      return false;
+    }
+    return true;
+  };
+
+  const handleBuyNow = (e) => {
+    e.stopPropagation();
+    if (requireLogin('buyNow')) {
+      navigate('/checkout', { state: { product, quantity: 1 } });
+    }
+  };
+
+  const handleCartAction = (e) => {
+    e.stopPropagation();
+    if (isInCart) {
+      if (requireLogin('goToCart')) {
+        navigate('/cart');
+      }
+    } else {
+      if (requireLogin('addToCart')) {
+        onAddToCart && onAddToCart(product);
+      }
+    }
+  };
+
+  const handleWishlistClick = (e) => {
+    e.stopPropagation();
+    if (requireLogin('addToWishlist')) {
+      onAddToWishlist && onAddToWishlist(product);
+    }
+  };
 
   return (
-    <div className="group relative bg-white rounded-[2.5rem] p-4 transition-all duration-500 hover:shadow-[0_40px_80px_-15px_rgba(255,182,193,0.3)] border border-transparent hover:border-pink-50">
+    <div className="group relative bg-white rounded-[2.5rem] p-4 transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-pink-200">
       <div onClick={() => onClick && onClick(product)} className="cursor-pointer">
         <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-pink-50">
           <img
             src={product.image || '/placeholder.png'}
             alt={product.name}
-            className="h-full w-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-          <div className="absolute top-4 left-4 flex space-x-2">
+          <div className="absolute top-4 left-4">
             {product.category && (
-              <span className="bg-white/90 backdrop-blur-md text-pink-600 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
+              <span className="bg-white/90 backdrop-blur-sm text-pink-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-sm">
                 {product.category}
               </span>
             )}
           </div>
 
-          {/* Wishlist Heart Button */}
+          {/* Wishlist Button */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToWishlist && onAddToWishlist(product);
-            }}
-            className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+            onClick={handleWishlistClick}
+            className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
           >
-            <svg className={`w-4 h-4 transition-colors ${isInWishlist ? 'fill-pink-600 text-pink-600' : 'text-gray-500 hover:text-pink-600'}`} fill={isInWishlist ? "#EC4899" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 ${isInWishlist ? 'fill-pink-600 text-pink-600' : 'text-gray-500'}`} fill={isInWishlist ? "#EC4899" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
         </div>
 
-        <div className="mt-4 px-2 pb-2">
+        <div className="mt-4 px-2">
           <div className="flex justify-between items-start mb-1">
-            <h3 className="text-lg font-['Outfit'] font-bold text-gray-900 group-hover:text-pink-600 transition-colors line-clamp-1">
+            <h3 className="font-bold text-gray-900 group-hover:text-pink-600 transition-colors">
               {product.name}
             </h3>
-            <span className="text-lg font-black text-gray-900">₹{product.price}</span>
+            <span className="font-bold text-gray-900">₹{product.price}</span>
           </div>
-          <p className="text-gray-500 text-xs line-clamp-2 mb-3">{product.description}</p>
+          <p className="text-gray-500 text-xs line-clamp-2">{product.description}</p>
         </div>
       </div>
 
-      {/* Add to Cart Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onAddToCart && onAddToCart(product);
-        }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-gray-900 px-6 py-2 rounded-xl font-bold text-sm shadow-xl transform translate-y-10 group-hover:translate-y-0 transition-all duration-500 hover:bg-pink-600 hover:text-white w-[90%]"
-      >
-        Add to Cart
-      </button>
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={handleCartAction}
+          className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${
+            isInCart 
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+              : 'bg-gray-900 hover:bg-pink-600 text-white'
+          }`}
+        >
+          {isInCart ? 'Go to Cart' : 'Add to Cart'}
+        </button>
+        <button
+          onClick={handleBuyNow}
+          className="flex-1 bg-pink-600 text-white py-2 rounded-xl font-bold text-sm transition-all duration-300 hover:bg-gray-900"
+        >
+          Buy Now
+        </button>
+      </div>
     </div>
   );
 };
 
-export default ProductCard; 
+export default ProductCard;

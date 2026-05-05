@@ -1,5 +1,7 @@
+// src/components/Auth.jsx
 import { useState } from 'react';
-import { loginWithEmail, registerWithEmail } from '../firebase';
+import { loginWithEmail, registerWithEmail, syncUserDocument } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
 const Auth = ({ onBack, onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,7 +12,9 @@ const Auth = ({ onBack, onLoginSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
+  // ✅ handleChange function - this was missing
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,6 +22,50 @@ const Auth = ({ onBack, onLoginSuccess }) => {
     });
     setError('');
   };
+
+  // src/components/Auth.jsx - Update the executePendingAction function
+
+const executePendingAction = (userData) => {
+    const pendingAction = localStorage.getItem('pendingAction');
+    if (pendingAction) {
+        const action = JSON.parse(pendingAction);
+        localStorage.removeItem('pendingAction');
+        
+        setTimeout(() => {
+            switch (action.action) {
+                case 'addToCart':
+                    if (window.dispatchEvent) {
+                        window.dispatchEvent(new CustomEvent('pendingAddToCart', { detail: action }));
+                    }
+                    navigate('/');
+                    break;
+                case 'buyNow':
+                    navigate('/checkout', { state: { product: action.product, quantity: action.quantity } });
+                    break;
+                case 'addToWishlist':
+                    if (window.dispatchEvent) {
+                        window.dispatchEvent(new CustomEvent('pendingAddToWishlist', { detail: action }));
+                    }
+                    navigate('/');
+                    break;
+                case 'goToCart':
+                    navigate('/cart');
+                    break;
+                case 'viewCart':
+                    navigate('/cart');
+                    break;
+                case 'viewWishlist':
+                    navigate('/wishlist');
+                    break;
+                case 'proceedToCheckout':  // ✅ Add this case
+                    navigate('/checkout');
+                    break;
+                default:
+                    navigate('/');
+            }
+        }, 500);
+    }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +76,9 @@ const Auth = ({ onBack, onLoginSuccess }) => {
 
     if (isLogin) {
       result = await loginWithEmail(formData.email, formData.password);
+      if (result.success) {
+        await syncUserDocument(result.user);
+      }
     } else {
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters');
@@ -42,14 +93,20 @@ const Auth = ({ onBack, onLoginSuccess }) => {
         id: result.user.uid,
         name: result.user.displayName || formData.name || formData.email.split('@')[0],
         email: result.user.email,
+        createdAt: new Date().toISOString()
       };
 
+      // Save to localStorage
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
       if (onLoginSuccess) {
         onLoginSuccess(userData);
       }
+      
+      // Execute pending action after login
+      executePendingAction(userData);
+      
       onBack();
     } else {
       setError(result.error);
@@ -127,7 +184,7 @@ const Auth = ({ onBack, onLoginSuccess }) => {
 
               {isLogin && (
                 <div className="flex justify-end">
-                  <a href="#" className="text-[10px] font-black uppercase tracking-widest text-pink-600 hover:text-gray-900 transition-colors">Forgot Password?</a>
+                  <button type="button" className="text-[10px] font-black uppercase tracking-widest text-pink-600 hover:text-gray-900 transition-colors">Forgot Password?</button>
                 </div>
               )}
 

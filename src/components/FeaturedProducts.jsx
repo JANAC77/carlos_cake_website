@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { getFeaturedProducts } from '../firebase';
 import ProductCard from './ProductCard';
 
-const FeaturedProducts = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist = [] }) => {
+const FeaturedProducts = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist = [], cart = [], isLoggedIn = false }) => {  // Add cart prop
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,9 +16,6 @@ const FeaturedProducts = ({ onProductClick, onAddToCart, onAddToWishlist, wishli
     setProducts(data);
     setLoading(false);
   };
-
-  // Don't create a wrapper - use the passed onAddToCart directly
-  // Just pass it to ProductCard as is
 
   if (loading) {
     return (
@@ -58,13 +55,15 @@ const FeaturedProducts = ({ onProductClick, onAddToCart, onAddToWishlist, wishli
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {products.map((product) => (
               <ProductCard
-                key={product.id}
-                product={product}
-                onClick={onProductClick}
-                onAddToCart={onAddToCart}  // Pass directly - no wrapper
-                onAddToWishlist={onAddToWishlist}
-                wishlist={wishlist}
-              />
+        key={product.id}
+        product={product}
+        onClick={onProductClick}
+        onAddToCart={onAddToCart}
+        onAddToWishlist={onAddToWishlist}
+        wishlist={wishlist}
+        cart={cart}
+        isLoggedIn={isLoggedIn}  // Add this line
+      />
             ))}
           </div>
         ) : (

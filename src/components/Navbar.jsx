@@ -1,5 +1,5 @@
-// src/components/Navbar.jsx
-import { useState, useEffect } from 'react';
+// src/components/Navbar.jsx (Update - Add dropdown menu)
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = ({
@@ -18,9 +18,10 @@ const Navbar = ({
   const [searchInput, setSearchInput] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const navigate = useNavigate();
-
+  const searchTimeoutRef = useRef(null);
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -42,6 +43,17 @@ const Navbar = ({
     }
   }, [cartMessage, showCartMessage]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && !event.target.closest('.user-dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isDropdownOpen]);
+
   const navItems = [
     { name: 'Home', path: '/' },
     { name: 'Menu', path: '/menu' },
@@ -50,17 +62,27 @@ const Navbar = ({
     { name: 'Our Story', path: '/our-story' }
   ];
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchInput(value);
+ const handleSearchChange = (e) => {
+  const value = e.target.value;
+  setSearchInput(value);
+  // Debounce search to avoid too many calls
+  if (searchTimeoutRef.current) {
+    clearTimeout(searchTimeoutRef.current);
+  }
+  searchTimeoutRef.current = setTimeout(() => {
     if (onSearch) onSearch(value);
+  }, 300);
+};
+  const handleDropdownItemClick = (path) => {
+    setIsDropdownOpen(false);
+    navigate(path);
   };
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-          ? 'bg-[#1A1616] py-3 shadow-2xl border-b border-pink-500/20'
-          : 'bg-[#1A1616] py-4 border-b border-white/5'
+        ? 'bg-[#1A1616] py-3 shadow-2xl border-b border-pink-500/20'
+        : 'bg-[#1A1616] py-4 border-b border-white/5'
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,26 +146,88 @@ const Navbar = ({
               </svg>
             </button>
 
-            {/* User Menu */}
             {isLoggedIn && user ? (
-              <div className="relative group">
-                <button className="flex items-center space-x-2 text-white/80 hover:text-pink-500 transition-all">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+  <div 
+    className="relative user-dropdown"
+    onMouseEnter={() => setIsDropdownOpen(true)}
+    onMouseLeave={() => setIsDropdownOpen(false)}
+  >
+    <button
+      className="flex items-center space-x-2 text-white/80 hover:text-pink-500 transition-all"
+    >
+      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg">
+        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+      </div>
+    </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+<div className="absolute right-0 mt-2 w-64 bg-[#1A1616] border border-white/10 rounded-2xl shadow-xl z-50 animate-slide-down">                    {/* User Info Header */}
+                    <div className="p-4 border-b border-white/10">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center text-white font-bold">
+                          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm truncate">{user?.name}</p>
+                          <p className="text-gray-400 text-xs truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-2">
+                      <button
+                        onClick={() => handleDropdownItemClick('/profile')}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-pink-500 hover:bg-white/5 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="text-sm font-medium">My Profile</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDropdownItemClick('/my-orders')}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-pink-500 hover:bg-white/5 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
+                        </svg>
+                        <span className="text-sm font-medium">My Orders</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDropdownItemClick('/wishlist')}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-pink-500 hover:bg-white/5 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span className="text-sm font-medium">Wishlist</span>
+                      </button>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-white/10"></div>
+
+                    {/* Logout Button */}
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          onLogout();
+                        }}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-xl transition-all"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span className="text-sm font-medium">Sign Out</span>
+                      </button>
+                    </div>
                   </div>
-                </button>
-                <div className="absolute right-0 mt-2 w-48 bg-[#1A1616] border border-white/10 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                  <div className="p-4 border-b border-white/10">
-                    <p className="text-white font-medium text-sm truncate">{user?.name}</p>
-                    <p className="text-gray-400 text-xs truncate">{user?.email}</p>
-                  </div>
-                  <button
-                    onClick={onLogout}
-                    className="w-full text-left px-4 py-3 text-gray-400 hover:text-pink-500 hover:bg-white/5 transition-colors text-sm rounded-b-2xl"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+                )}
               </div>
             ) : (
               <Link
@@ -173,20 +257,17 @@ const Navbar = ({
 
             {/* Cart Button with Message Near Icon */}
             <div className="relative">
-              <Link
-                to="/cart"
-                className="relative text-white/80 hover:text-pink-500 transition-all transform hover:scale-110 duration-300 block"
-              >
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
-                </svg>
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-
+            {/* Cart Button with Count */}
+<Link to="/cart" className="relative text-white/80 hover:text-pink-500 transition-all">
+  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
+  </svg>
+  {cartCount > 0 && (
+    <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+      {cartCount}
+    </span>
+  )}
+</Link>
               {/* Pink Message - Only One, Near Cart Icon */}
               {showMessage && currentMessage && (
                 <div className="absolute -top-12 right-0 whitespace-nowrap z-[100] animate-message-popup">
@@ -254,7 +335,7 @@ const Navbar = ({
               {isLoggedIn && user ? (
                 <>
                   <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl">
-                    <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center text-white font-bold">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1">
@@ -262,9 +343,36 @@ const Navbar = ({
                       <p className="text-gray-400 text-xs truncate">{user?.email}</p>
                     </div>
                   </div>
+
+                  {/* Mobile Menu Links */}
+                  <Link
+                    to="/profile"
+                    className="block w-full text-white/80 hover:text-pink-500 transition-colors py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Profile
+                  </Link>
+                  <Link
+                    to="/my-orders"
+                    className="block w-full text-white/80 hover:text-pink-500 transition-colors py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    My Orders
+                  </Link>
+                  <Link
+                    to="/wishlist"
+                    className="block w-full text-white/80 hover:text-pink-500 transition-colors py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Wishlist
+                  </Link>
+
                   <button
-                    onClick={onLogout}
-                    className="w-full border border-white/10 text-white py-3 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-pink-500 hover:border-pink-500 transition-all"
+                    onClick={() => {
+                      onLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full border border-white/10 text-white py-3 rounded-full font-bold uppercase tracking-widest text-[10px] hover:bg-red-500 hover:border-red-500 transition-all"
                   >
                     Sign Out
                   </button>

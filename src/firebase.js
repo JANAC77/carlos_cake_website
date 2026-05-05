@@ -1,4 +1,4 @@
-// src/firebase.js (for your main cake shop website)
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import {
     getAuth,
@@ -16,13 +16,13 @@ import {
     doc,
     query,
     where,
-    orderBy,
-    limit,
     addDoc,
+    orderBy,
     updateDoc,
-    serverTimestamp
+    serverTimestamp,
+    setDoc
 } from "firebase/firestore";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAfclcscjwaYKfQEeDWSIr0Heh1Jbgpbcw",
@@ -77,14 +77,24 @@ export const registerWithEmail = async (name, email, password) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name });
 
-        // Save user to Firestore
-        await addDoc(collection(db, 'users'), {
+        const userData = {
             uid: userCredential.user.uid,
             name: name,
             email: email,
+            phoneNumber: '',
+            address: '',
+            city: '',
+            pincode: '',
+            role: 'user',
+            status: 'active',
             createdAt: serverTimestamp(),
-            role: 'user'
-        });
+            updatedAt: serverTimestamp(),
+            totalOrders: 0,
+            totalSpent: 0
+        };
+
+        await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+        await setDoc(doc(db, 'user', userCredential.user.uid), userData);
 
         return { success: true, user: userCredential.user };
     } catch (error) {
@@ -117,6 +127,84 @@ export const logoutUser = async () => {
 
 export { onAuthStateChanged };
 
+// ============ USER FUNCTIONS ============
+
+export const getUserById = async (userId) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        let userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            return { id: userSnap.id, ...userSnap.data() };
+        }
+
+        const userRef2 = doc(db, 'user', userId);
+        userSnap = await getDoc(userRef2);
+
+        if (userSnap.exists()) {
+            return { id: userSnap.id, ...userSnap.data() };
+        }
+
+        return null;
+    } catch (error) {
+        console.error("Error getting user:", error);
+        return null;
+    }
+};
+
+export const syncUserDocument = async (user) => {
+    try {
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            const userData = {
+                uid: user.uid,
+                name: user.displayName || user.email.split('@')[0],
+                email: user.email,
+                phoneNumber: user.phoneNumber || '',
+                address: '',
+                city: '',
+                pincode: '',
+                role: 'user',
+                status: 'active',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                totalOrders: 0,
+                totalSpent: 0
+            };
+
+            await setDoc(userRef, userData);
+            await setDoc(doc(db, 'user', user.uid), userData);
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Error syncing user:", error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const updateUserInFirestore = async (userId, userData) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            ...userData,
+            updatedAt: serverTimestamp()
+        });
+
+        const userRef2 = doc(db, 'user', userId);
+        await updateDoc(userRef2, {
+            ...userData,
+            updatedAt: serverTimestamp()
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating user:", error);
+        return { success: false, error: error.message };
+    }
+};
+
 // ============ PRODUCTS ============
 export const getProducts = async (categoryId = null, subCategoryId = null) => {
     try {
@@ -130,11 +218,20 @@ export const getProducts = async (categoryId = null, subCategoryId = null) => {
             constraints.push(where('subCategoryId', '==', subCategoryId));
         }
         constraints.push(where('status', '==', 'active'));
-        constraints.push(orderBy('createdAt', 'desc'));
-
+        
         const q = query(productsRef, ...constraints);
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort manually by createdAt
+        products.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return dateB - dateA;
+        });
+        
+        return products;
     } catch (error) {
         console.error("Error getting products:", error);
         return [];
@@ -158,63 +255,38 @@ export const getProductById = async (id) => {
 export const getFeaturedProducts = async () => {
     try {
         const productsRef = collection(db, 'products');
-
-        // First try with index (will work after index is created)
-        try {
-            const q = query(
-                productsRef,
-                where('status', '==', 'active'),
-                where('isAvailable', '==', true),
-                orderBy('createdAt', 'desc'),
-                limit(6)
-            );
-            const snapshot = await getDocs(q);
-            const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Ensure each product has required fields
-            return products.map(product => ({
-                ...product,
-                price: product.price || 0,
-                image: product.image || '/placeholder.png',
-                category: product.categoryName || product.category || 'Cake'
-            }));
-        } catch (indexError) {
-            console.warn("Index not ready, using fallback query:", indexError);
-
-            // Fallback: fetch all and filter client-side
-            const q = query(
-                productsRef,
-                where('status', '==', 'active')
-            );
-            const snapshot = await getDocs(q);
-            let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Filter and sort client-side
-            products = products.filter(p => p.isAvailable === true);
-            products = products.sort((a, b) => {
-                const dateA = a.createdAt?.toDate?.() || new Date(0);
-                const dateB = b.createdAt?.toDate?.() || new Date(0);
-                return dateB - dateA;
-            });
-            products = products.slice(0, 6);
-
-            return products.map(product => ({
-                ...product,
-                price: product.price || 0,
-                image: product.image || '/placeholder.png',
-                category: product.categoryName || product.category || 'Cake'
-            }));
-        }
+        const q = query(productsRef, where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
+        
+        let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        products = products.filter(p => p.isAvailable === true);
+        
+        products.sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+            return dateB - dateA;
+        });
+        
+        products = products.slice(0, 6);
+        
+        return products.map(product => ({
+            ...product,
+            price: product.price || 0,
+            image: product.image || '/placeholder.png',
+            category: product.categoryName || product.category || 'Cake'
+        }));
     } catch (error) {
         console.error("Error getting featured products:", error);
         return [];
     }
 };
+
 // ============ CATEGORIES ============
 export const getCategories = async () => {
     try {
         const categoriesRef = collection(db, 'categories');
-        const q = query(categoriesRef, where('status', '==', 'active')); const snapshot = await getDocs(q);
+        const q = query(categoriesRef, where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error("Error getting categories:", error);
@@ -239,43 +311,236 @@ export const getCategoryById = async (id) => {
 // ============ SUBCATEGORIES ============
 export const getSubCategories = async (categoryId = null) => {
     try {
-        let constraints = [where('status', '==', 'active'), orderBy('name', 'asc')];
+        let constraints = [where('status', '==', 'active')];
         if (categoryId) {
             constraints.push(where('categoryId', '==', categoryId));
         }
+        
         const subCategoriesRef = collection(db, 'subCategories');
         const q = query(subCategoriesRef, ...constraints);
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        let subCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        subCategories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        
+        return subCategories;
     } catch (error) {
         console.error("Error getting subcategories:", error);
         return [];
     }
 };
 
-// ============ ORDERS ============
+// ============ ORDERS FUNCTIONS - ALL EXPORTS HERE ============
+
 export const createOrder = async (orderData) => {
     try {
-        const docRef = await addDoc(collection(db, 'orders'), {
+        const order = {
             ...orderData,
+            orderId: `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`,
             createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
+            updatedAt: serverTimestamp(),
+            status: 'pending'
+        };
+        
+        const docRef = await addDoc(collection(db, 'orders'), order);
+        console.log("Order created with ID:", docRef.id);
+
+        if (orderData.userId && orderData.userId !== 'guest') {
+            try {
+                const userRef = doc(db, 'users', orderData.userId);
+                const userSnap = await getDoc(userRef);
+                
+                if (userSnap.exists()) {
+                    const user = userSnap.data();
+                    await updateDoc(userRef, {
+                        totalOrders: (user.totalOrders || 0) + 1,
+                        totalSpent: (user.totalSpent || 0) + (orderData.total || 0),
+                        updatedAt: serverTimestamp()
+                    });
+                }
+            } catch (userError) {
+                console.error("Error updating user stats:", userError);
+            }
+        }
+        
         return { success: true, id: docRef.id };
     } catch (error) {
         console.error("Error creating order:", error);
         return { success: false, error: error.message };
     }
 };
+
 export const getUserOrders = async (userId) => {
     try {
+        if (!userId) return [];
+        
         const ordersRef = collection(db, 'orders');
-        const q = query(ordersRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+        const q = query(ordersRef, where('userId', '==', userId));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        let orders = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : 
+                          (data.createdAt ? new Date(data.createdAt) : new Date())
+            };
+        });
+        
+        orders.sort((a, b) => {
+            const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+            const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+            return dateB - dateA;
+        });
+        
+        return orders;
     } catch (error) {
         console.error("Error getting user orders:", error);
         return [];
+    }
+};
+
+export const getUserOrdersByEmail = async (email) => {
+    try {
+        if (!email) return [];
+        
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('customerEmail', '==', email));
+        const snapshot = await getDocs(q);
+        
+        let orders = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : 
+                          (data.createdAt ? new Date(data.createdAt) : new Date())
+            };
+        });
+        
+        orders.sort((a, b) => {
+            const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+            const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+            return dateB - dateA;
+        });
+        
+        return orders;
+    } catch (error) {
+        console.error("Error getting orders by email:", error);
+        return [];
+    }
+};
+
+export const getUserOrdersList = async (userId) => {
+    return getUserOrders(userId);
+};
+
+// ============ REVIEWS FUNCTIONS ============
+
+export const addReview = async (productId, userId, userName, rating, comment) => {
+    try {
+        const reviewData = {
+            productId: productId,
+            userId: userId,
+            userName: userName,
+            rating: Number(rating),
+            comment: comment,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: 'active'
+        };
+        
+        const docRef = await addDoc(collection(db, 'reviews'), reviewData);
+        
+        // Update product average rating
+        await updateProductRating(productId);
+        
+        return { success: true, id: docRef.id };
+    } catch (error) {
+        console.error("Error adding review:", error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const getProductReviews = async (productId) => {
+    try {
+        if (!productId) return [];
+        
+        const reviewsRef = collection(db, 'reviews');
+        // Only filter by productId
+        const q = query(reviewsRef, where('productId', '==', productId));
+        const snapshot = await getDocs(q);
+        
+        const reviews = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+                };
+            })
+            .filter(review => review.status === 'active') // Filter status client-side
+            .sort((a, b) => b.createdAt - a.createdAt); // Sort client-side
+        
+        return reviews;
+    } catch (error) {
+        console.error("Error getting reviews:", error);
+        return [];
+    }
+};
+
+export const updateProductRating = async (productId) => {
+    try {
+        const reviews = await getProductReviews(productId);
+        
+        if (reviews.length === 0) return;
+        
+        const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+        const averageRating = totalRating / reviews.length;
+        const ratingCount = reviews.length;
+        
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
+            averageRating: averageRating,
+            ratingCount: ratingCount,
+            updatedAt: serverTimestamp()
+        });
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating product rating:", error);
+        return { success: false, error: error.message };
+    }
+};
+
+export const getUserReviewForProduct = async (productId, userId) => {
+    try {
+        if (!productId || !userId) return null;
+        
+        const reviewsRef = collection(db, 'reviews');
+        const q = query(
+            reviewsRef,
+            where('productId', '==', productId),
+            where('userId', '==', userId),
+            where('status', '==', 'active')
+        );
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            const data = doc.data();
+            return { 
+                id: doc.id, 
+                ...data,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error getting user review:", error);
+        return null;
     }
 };
 
