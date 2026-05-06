@@ -15,6 +15,9 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
         paymentMethod: 'cod'
     });
 
+    // Delivery charge - fixed ₹100
+    const DELIVERY_CHARGE = 100;
+
     // Update form when user changes
     useEffect(() => {
         if (user) {
@@ -35,8 +38,9 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
         return sum + (price * (item.quantity || 1));
     }, 0);
 
-    const deliveryCharge = 0;
-    const total = subtotal;
+    // Fixed delivery charge of ₹100 for all orders
+    const deliveryCharge = DELIVERY_CHARGE;
+    const total = subtotal + deliveryCharge;
 
     const removeItem = (id) => {
         const item = cart.find(i => i.id === id);
@@ -54,32 +58,29 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
         }));
     };
 
-    // src/components/CartPage.jsx - Update the handleProceedToCheckout function
-
-const handleProceedToCheckout = () => {
-    if (cart.length === 0) {
-        if (showToast) showToast('Your cart is empty!');
-        return;
-    }
-    
-    if (!user || !user.id) {
-        // ✅ Save pending action to localStorage before redirecting to login
-        const pendingAction = {
-            action: 'proceedToCheckout',
-            timestamp: Date.now()
-        };
-        localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
+    const handleProceedToCheckout = () => {
+        if (cart.length === 0) {
+            if (showToast) showToast('Your cart is empty!');
+            return;
+        }
         
-        if (showToast) showToast('Please login to place your order! 🔐');
-        setTimeout(() => {
-            onNavigate('/login');
-        }, 500);
-        return;
-    }
-    
-    // Navigate to checkout page
-    navigate('/checkout');
-};
+        if (!user || !user.id) {
+            const pendingAction = {
+                action: 'proceedToCheckout',
+                timestamp: Date.now()
+            };
+            localStorage.setItem('pendingAction', JSON.stringify(pendingAction));
+            
+            if (showToast) showToast('Please login to place your order! 🔐');
+            setTimeout(() => {
+                onNavigate('/login');
+            }, 500);
+            return;
+        }
+        
+        navigate('/checkout');
+    };
+
     // Empty Cart
     if (cart.length === 0) {
         return (
@@ -202,7 +203,7 @@ const handleProceedToCheckout = () => {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Delivery Fee</span>
-                                    <span className="text-green-600 font-medium">FREE</span>
+                                    <span className="font-medium text-red-500">₹{deliveryCharge}</span>
                                 </div>
                                 <div className="border-t border-gray-100 pt-3 mt-3">
                                     <div className="flex justify-between">
@@ -212,12 +213,12 @@ const handleProceedToCheckout = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-4 p-3 bg-green-50 rounded-xl mb-6">
+                            <div className="mt-4 p-3 bg-yellow-50 rounded-xl mb-6">
                                 <div className="flex items-center space-x-2">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                    <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p className="text-xs text-green-700">You saved ₹{deliveryCharge} on delivery</p>
+                                    <p className="text-xs text-yellow-700">Delivery charge ₹{deliveryCharge} applied</p>
                                 </div>
                             </div>
 
@@ -225,7 +226,7 @@ const handleProceedToCheckout = () => {
                                 onClick={handleProceedToCheckout}
                                 className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold hover:bg-gray-900 transition"
                             >
-                                Proceed to Checkout
+                                Proceed to Checkout • ₹{total.toFixed(2)}
                             </button>
 
                             {(!user || !user.id) && (

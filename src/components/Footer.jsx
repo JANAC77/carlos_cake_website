@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const Footer = ({ logo }) => {
   const socialLinks = [
     {
@@ -134,33 +136,54 @@ const Footer = ({ logo }) => {
           </div>
 
           {/* Quick Links with Privacy Policy */}
-          <div>
-            <h4 className="text-pink-500 font-black uppercase tracking-widest text-sm mb-10">Quick Links</h4>
-            <ul className="space-y-6">
-              {['About Us', 'FAQs', 'Delivery Information', 'Cancellation Policy', 'Privacy Policy'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors font-medium">{item}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
+<div>
+    <h4 className="text-pink-500 font-black uppercase tracking-widest text-sm mb-10">Quick Links</h4>
+    <ul className="space-y-6">
+        <li>
+            <Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors font-medium">
+                Privacy Policy
+            </Link>
+        </li>
+        <li>
+            <Link to="/terms-conditions" className="text-gray-400 hover:text-white transition-colors font-medium">
+                Terms & Conditions
+            </Link>
+        </li>
+        <li>
+            <Link to="/refund-policy" className="text-gray-400 hover:text-white transition-colors font-medium">
+                Refund Policy
+            </Link>
+        </li>
+    </ul>
+</div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-600 font-medium text-[10px] uppercase tracking-[0.2em]">© 2026 Carlos Cakes. All Rights Reserved.</p>
-          <div className="flex space-x-8">
-            {footerLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="text-gray-600 hover:text-pink-500 transition-colors text-[10px] uppercase tracking-[0.2em]"
-              >
-                {link.name}
-              </a>
-            ))}
-          </div>
-        </div>
+<div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+    <p className="text-gray-600 font-medium text-[10px] uppercase tracking-[0.2em]">
+        © 2026 Carlos Cakes. All Rights Reserved.
+    </p>
+    <div className="flex space-x-8">
+        <Link 
+            to="/privacy-policy"
+            className="text-gray-600 hover:text-pink-500 transition-colors text-[10px] uppercase tracking-[0.2em]"
+        >
+            Privacy Policy
+        </Link>
+        <Link 
+            to="/terms-conditions"
+            className="text-gray-600 hover:text-pink-500 transition-colors text-[10px] uppercase tracking-[0.2em]"
+        >
+            Terms of Service
+        </Link>
+        <Link 
+            to="/refund-policy"
+            className="text-gray-600 hover:text-pink-500 transition-colors text-[10px] uppercase tracking-[0.2em]"
+        >
+            Refund Policy
+        </Link>
+    </div>
+</div>
       </div>
     </footer>
   );

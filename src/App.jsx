@@ -24,6 +24,10 @@ import UserOrdersPage from './components/UserOrdersPage';
 import { auth, onAuthStateChanged, getProducts, syncUserDocument, getUserById } from './firebase';
 import ProductCard from './components/ProductCard';
 import CheckoutPage from './components/CheckoutPage'; // Add this import
+import WhatsAppButton from './components/WhatsAppButton';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsConditions from './components/TermsConditions';
+import RefundPolicy from './components/RefundPolicy';
 
 
 const logo = '/carlos.png';
@@ -288,7 +292,7 @@ const handleAddToCart = (product) => {
         cartMessage={cartMessage}
         showCartMessage={showCartMessage}
       />
-
+      <WhatsAppButton />
       <Routes>
         <Route path="/" element={
           <>
@@ -418,6 +422,10 @@ const handleAddToCart = (product) => {
             </div>
           </div>
         } />
+
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+       <Route path="/terms-conditions" element={<TermsConditions />} />
+       <Route path="/refund-policy" element={<RefundPolicy />} />
       </Routes>
 
       <Footer logo={logo} />
