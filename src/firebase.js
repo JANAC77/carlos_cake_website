@@ -971,4 +971,41 @@ export const getProductsWithOffers = async () => {
         return [];
     }
 };
+
+// Add to customer firebase.js
+export const getActiveBanners = async () => {
+    try {
+        const bannersRef = collection(db, 'banners');
+        const q = query(bannersRef, where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
+        let banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        banners.sort((a, b) => (a.order || 0) - (b.order || 0));
+        return banners;
+    } catch (error) {
+        console.error("Error getting active banners:", error);
+        return [];
+    }
+};
+
+// Get active banners by type (no index needed)
+export const getBannersByType = async (type) => {
+    try {
+        const bannersRef = collection(db, 'banners');
+        const q = query(bannersRef, where('status', '==', 'active'));
+        const snapshot = await getDocs(q);
+        
+        let allBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Filter by type in JavaScript
+        let filteredBanners = allBanners.filter(banner => banner.type === type);
+        
+        // Sort by order
+        filteredBanners.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        return filteredBanners;
+    } catch (error) {
+        console.error("Error getting banners by type:", error);
+        return [];
+    }
+};
 export default app;

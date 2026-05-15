@@ -34,6 +34,8 @@ import AllProductsPage from './components/AllProductsPage';
 import ResetPassword from './components/ResetPassword';
 import OccasionBasedFilter from './components/OccasionBasedFilter';  
 import Gallery from './components/Gallery';
+import SmallBannerSlider from './components/SmallBannerSlider';
+
 // IMPORT THIS
 
 const logo = '/carlos.png';
@@ -242,6 +244,7 @@ function AppContent() {
         <Route path="/" element={
           <>
             <Hero />
+            <SmallBannerSlider />   
             <CategorySection />
             <OffersPage />
             <FeaturedProducts
