@@ -45,6 +45,19 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+const API_BASE_URL = 'https://carlos-cake-admin.onrender.com';
+
+export const sanitizeItemImages = (item) => {
+    if (!item) return item;
+    if (item.image && item.image.startsWith('/api/')) {
+        item.image = `${API_BASE_URL}${item.image}`;
+    }
+    if (item.url && item.url.startsWith('/api/')) {
+        item.url = `${API_BASE_URL}${item.url}`;
+    }
+    return item;
+};
+
 // ============ AUTH FUNCTIONS ============
 export const loginWithEmail = async (email, password) => {
     try {
@@ -225,7 +238,7 @@ export const getProducts = async (categoryId = null, subCategoryId = null) => {
         const q = query(productsRef, ...constraints);
         const snapshot = await getDocs(q);
 
-        let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let products = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
 
         // Sort manually by createdAt
         products.sort((a, b) => {
@@ -246,7 +259,7 @@ export const getProductById = async (id) => {
         const docRef = doc(db, 'products', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() };
+            return sanitizeItemImages({ id: docSnap.id, ...docSnap.data() });
         }
         return null;
     } catch (error) {
@@ -261,7 +274,7 @@ export const getFeaturedProducts = async () => {
         const q = query(productsRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
 
-        let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let products = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
         products = products.filter(p => p.isAvailable === true);
 
         products.sort((a, b) => {
@@ -290,7 +303,7 @@ export const getCategories = async () => {
         const categoriesRef = collection(db, 'categories');
         const q = query(categoriesRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error("Error getting categories:", error);
         return [];
@@ -302,7 +315,7 @@ export const getCategoryById = async (id) => {
         const docRef = doc(db, 'categories', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() };
+            return sanitizeItemImages({ id: docSnap.id, ...docSnap.data() });
         }
         return null;
     } catch (error) {
@@ -557,7 +570,7 @@ export const getProductsByOccasion = async (occasion) => {
         const productsRef = collection(db, 'products');
         const q = query(productsRef, where('occasions', 'array-contains', occasion), where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error("Error getting products by occasion:", error);
         return [];
@@ -633,7 +646,7 @@ export const getAddOns = async () => {
         const addOnsRef = collection(db, 'addOns');
         const q = query(addOnsRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error("Error getting add-ons:", error);
         return [];
@@ -809,7 +822,7 @@ export const getMenuItems = async (categoryId = null) => {
         const itemsRef = collection(db, 'menuItems');
         const q = query(itemsRef, ...constraints);
         const snapshot = await getDocs(q);
-        let items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let items = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
         // Sort by name or price in JavaScript
         items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         return items;
@@ -832,12 +845,12 @@ export const getGalleryImages = async () => {
         let images = snapshot.docs.map(doc => {
             const data = doc.data();
             const category = categories.find(c => c.id === data.categoryId);
-            return {
+            return sanitizeItemImages({
                 id: doc.id,
                 ...data,
                 categoryName: category?.name || 'Uncategorized',
                 categoryIcon: category?.image || null
-            };
+            });
         });
 
         // Sort in JavaScript
@@ -875,11 +888,11 @@ export const getFeaturedGalleryImages = async (limit = 6) => {
         let images = snapshot.docs.map(doc => {
             const data = doc.data();
             const category = categories.find(c => c.id === data.categoryId);
-            return {
+            return sanitizeItemImages({
                 id: doc.id,
                 ...data,
                 categoryName: category?.name || 'Uncategorized'
-            };
+            });
         });
 
         // Sort by date (newest first) and limit
@@ -904,7 +917,7 @@ export const getActiveOffers = async () => {
         const q = query(offersRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
 
-        let offers = snapshot.docs.map(doc => ({
+        let offers = snapshot.docs.map(doc => sanitizeItemImages({
             id: doc.id,
             ...doc.data()
         }));
@@ -949,7 +962,7 @@ export const getProductsWithOffers = async () => {
 
         const today = new Date().toISOString().split('T')[0];
 
-        let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let products = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
 
         // Filter products with active offers
         const productsWithOffers = products.filter(product => {
@@ -978,7 +991,7 @@ export const getActiveBanners = async () => {
         const bannersRef = collection(db, 'banners');
         const q = query(bannersRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        let banners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let banners = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
         banners.sort((a, b) => (a.order || 0) - (b.order || 0));
         return banners;
     } catch (error) {
@@ -994,7 +1007,7 @@ export const getBannersByType = async (type) => {
         const q = query(bannersRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
 
-        let allBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let allBanners = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
 
         // Filter by type in JavaScript
         let filteredBanners = allBanners.filter(banner => banner.type === type);

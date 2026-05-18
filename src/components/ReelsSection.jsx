@@ -6,7 +6,7 @@ const ReelsSection = () => {
     const [loading, setLoading] = useState(true);
     const [hoveredReelId, setHoveredReelId] = useState(null);
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://carlos-cake-admin.onrender.com' : 'http://localhost:5000');
+    const API_BASE_URL = 'https://carlos-cake-admin.onrender.com';
 
     useEffect(() => {
         const fetchReels = async () => {

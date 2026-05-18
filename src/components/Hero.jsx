@@ -64,31 +64,28 @@ const Hero = () => {
 
     return (
         <section className="relative max-w-7xl mx-auto px-6 lg:px-12 mt-2 mb-6">
-            <div className="relative aspect-[16/7] md:aspect-[1024/250] w-full rounded-[32px] overflow-hidden shadow-lg group">
+            <div className="relative h-[180px] sm:h-[230px] md:h-[280px] lg:h-[320px] w-full rounded-[32px] overflow-hidden shadow-lg group">
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0">
-                    <div 
-                        className="absolute inset-0 transition-all duration-700 ease-in-out transform hover:scale-102"
-                        style={{
-                            backgroundImage: `url(${currentBanner?.image})`,
-                            backgroundSize: '100% 100%',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat'
-                        }}
+                    <img 
+                        src={currentBanner?.image} 
+                        alt={currentBanner?.title}
+                        className="w-full h-full object-cover block transition-transform duration-700 ease-in-out group-hover:scale-102"
+                        onError={(e) => { e.target.src = '/placeholder.png'; }}
                     />
                     {/* Semi-transparent dark overlay for better text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent z-1"></div>
                 </div>
 
                 {/* Content */}
                 <div className="relative z-10 h-full flex items-center px-8 sm:px-12 md:px-16 lg:px-20">
                     <div className="max-w-xl text-white">
                         <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-['Outfit'] font-black text-white mb-2 drop-shadow-md">
-                            {currentBanner?.title || "Slide 1 Heading"}
+                            {currentBanner?.title || "Freshly Baked Cakes"}
                         </h2>
 
                         <p className="text-[10px] sm:text-xs md:text-sm text-white/90 font-medium mb-4 line-clamp-2 sm:line-clamp-3 leading-relaxed drop-shadow-sm max-w-md">
-                            {currentBanner?.description || currentBanner?.subtitle || "Lorem ipsum dolor sit amet. We delivered best cake and our love with the cake."}
+                            {currentBanner?.description || currentBanner?.subtitle || "Hand-crafted with love, delivered straight to your door."}
                         </p>
 
                         <Link 
