@@ -32,7 +32,7 @@ import CategoryPage from './components/CategoryPage';
 import OffersPage from './components/OffersPage';
 import AllProductsPage from './components/AllProductsPage';
 import ResetPassword from './components/ResetPassword';
-import OccasionBasedFilter from './components/OccasionBasedFilter';  
+import OccasionBasedFilter from './components/OccasionBasedFilter';
 import Gallery from './components/Gallery';
 import SmallBannerSlider from './components/SmallBannerSlider';
 import ReelsSection from './components/ReelsSection';
@@ -241,9 +241,9 @@ function AppContent() {
       <WhatsAppButton />
       <Routes>
         <Route path="/" element={
-          <>
+          <div className="pt-[80px] sm:pt-[96px] md:pt-[112px]">
+            <SmallBannerSlider />
             <Hero />
-            <SmallBannerSlider />   
             <CategorySection />
             <OffersPage />
             <FeaturedProducts
@@ -258,8 +258,7 @@ function AppContent() {
             <CelebrationSection />
             <BranchesSection />
             <ReviewsSection />
-
-          </>
+          </div>
         } />
 
         <Route path="/menu" element={<Menu />} />
@@ -286,7 +285,7 @@ function AppContent() {
             isLoggedIn={isLoggedIn}
           />
         } />
-         <Route path="/gallery" element={<Gallery />} />
+        <Route path="/gallery" element={<Gallery />} />
 
         <Route path="/login" element={<Auth onBack={() => navigate('/')} onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -296,7 +295,7 @@ function AppContent() {
         <Route path="/wishlist" element={<WishlistPage wishlist={wishlist} onRemove={handleRemoveFromWishlist} onMoveToCart={handleMoveToCart} onNavigate={navigate} onProductClick={handleProductClick} />} />
         <Route path="/profile" element={<ProfilePage user={user} onUpdateProfile={handleUpdateProfile} onNavigate={navigate} />} />
         <Route path="/my-orders" element={<UserOrdersPage user={user} onNavigate={navigate} />} />
-        
+
         <Route path="/search" element={<div className="min-h-screen bg-white pt-32 pb-24"><div className="max-w-7xl mx-auto px-6 lg:px-12"><button onClick={() => navigate('/')} className="flex items-center space-x-2 text-gray-500 hover:text-pink-600 transition-colors mb-8 group"><svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg><span className="font-black uppercase tracking-widest text-xs">Back to Home</span></button><h1 className="text-3xl md:text-4xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tighter mb-4">Search Results</h1><p className="text-gray-500 mb-8">Found {searchResults.length} results for "{location.state?.query || searchQuery || ''}"</p>{searchResults.length > 0 ? (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{searchResults.map((product) => (<ProductCard key={product.id} product={product} onClick={() => handleProductClick(product)} onAddToCart={handleAddToCart} onAddToWishlist={handleAddToWishlist} wishlist={wishlist} />))}</div>) : (<div className="text-center py-20"><div className="w-24 h-24 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-6"><svg className="w-12 h-12 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div><h3 className="text-2xl font-['Outfit'] font-black text-gray-900 mb-2">No Results Found</h3><p className="text-gray-500 mb-8">We couldn't find any products matching "{location.state?.query || searchQuery || ''}"</p><button onClick={() => navigate('/')} className="bg-pink-600 text-white px-8 py-3 rounded-full font-black uppercase tracking-widest text-xs hover:bg-gray-900 transition-all">Browse All Cakes</button></div>)}</div></div>} />
 
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />

@@ -19,9 +19,9 @@ const SmallBannerSlider = () => {
                 setBanners(smallBanners);
             } else {
                 setBanners([
-                    { id: 1, image: "/custom_category.png", title: "Custom Cakes", subtitle: "Design your dream cake", ctaLink: "/contact" },
-                    { id: 2, image: "/wedding_category.png", title: "Wedding Cakes", subtitle: "Elegant & beautiful", ctaLink: "/category/wedding-cakes" },
-                    { id: 3, image: "/chocolate_truffle_cake_1777274037721.png", title: "Chocolate Cakes", subtitle: "Rich & decadent", ctaLink: "/category/chocolate-cakes" }
+                    { id: 1, image: "/cropped_banner1.png", title: "Sharing Happiness", subtitle: "Celebrating the journey of sharing happiness with you", ctaLink: "/contact" },
+                    { id: 2, image: "/cropped_banner2.png", title: "Grand Opening", subtitle: "Buy 1 Get 1 Free - Grand Opening", ctaLink: "/menu" },
+                    { id: 3, image: "/cropped_banner3.png", title: "Sharing Happiness", subtitle: "Celebrating the journey of sharing happiness with you", ctaLink: "/contact" }
                 ]);
             }
         } catch (error) {
@@ -70,10 +70,10 @@ const SmallBannerSlider = () => {
     const visibleImages = getVisibleImages();
 
     return (
-        <section className="py-12 bg-gradient-to-r from-pink-50 via-white to-rose-50 overflow-hidden">
+        <section className="pt-6 pb-2 bg-gradient-to-r from-pink-50 via-white to-rose-50 overflow-hidden">
             <div className="max-w-7xl mx-auto px-6 lg:px-12">
                 {/* Header Section */}
-              
+
                 <div className="relative group">
                     {/* Left Arrow */}
                     {banners.length > 3 && (
@@ -115,13 +115,13 @@ const SmallBannerSlider = () => {
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
                                         onError={(e) => { e.target.src = '/placeholder.png'; }}
                                     />
-                                    
+
                                     {/* Gradient Overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                                    
-                                  
 
-                                   
+
+
+
                                 </div>
 
                                 {/* Shine Effect on Hover */}
@@ -141,11 +141,10 @@ const SmallBannerSlider = () => {
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentIndex(idx)}
-                                        className={`transition-all duration-300 rounded-full ${
-                                            isActive
-                                                ? 'w-8 h-2 bg-pink-500 shadow-md'
-                                                : 'w-2 h-2 bg-gray-300 hover:bg-pink-400'
-                                        }`}
+                                        className={`transition-all duration-300 rounded-full ${isActive
+                                            ? 'w-8 h-2 bg-pink-500 shadow-md'
+                                            : 'w-2 h-2 bg-gray-300 hover:bg-pink-400'
+                                            }`}
                                         aria-label={`Go to slide ${idx + 1}`}
                                     />
                                 );
@@ -154,7 +153,7 @@ const SmallBannerSlider = () => {
                     )}
                 </div>
 
-                
+
             </div>
 
             {/* Custom Styles */}

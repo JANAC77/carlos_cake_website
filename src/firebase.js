@@ -825,10 +825,10 @@ export const getGalleryImages = async () => {
         // Only filter by status - no orderBy
         const q = query(galleryRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        
+
         // Get categories for mapping
         const categories = await getCategories();
-        
+
         let images = snapshot.docs.map(doc => {
             const data = doc.data();
             const category = categories.find(c => c.id === data.categoryId);
@@ -839,7 +839,7 @@ export const getGalleryImages = async () => {
                 categoryIcon: category?.image || null
             };
         });
-        
+
         // Sort in JavaScript
         images.sort((a, b) => {
             // Featured first
@@ -850,7 +850,7 @@ export const getGalleryImages = async () => {
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
             return dateB - dateA;
         });
-        
+
         return images;
     } catch (error) {
         console.error("Error getting gallery images:", error);
@@ -864,14 +864,14 @@ export const getFeaturedGalleryImages = async (limit = 6) => {
         const galleryRef = collection(db, 'gallery');
         // Filter by status and featured
         const q = query(
-            galleryRef, 
+            galleryRef,
             where('status', '==', 'active'),
             where('featured', '==', true)
         );
         const snapshot = await getDocs(q);
-        
+
         const categories = await getCategories();
-        
+
         let images = snapshot.docs.map(doc => {
             const data = doc.data();
             const category = categories.find(c => c.id === data.categoryId);
@@ -881,14 +881,14 @@ export const getFeaturedGalleryImages = async (limit = 6) => {
                 categoryName: category?.name || 'Uncategorized'
             };
         });
-        
+
         // Sort by date (newest first) and limit
         images.sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
             return dateB - dateA;
         });
-        
+
         return images.slice(0, limit);
     } catch (error) {
         console.error("Error getting featured gallery images:", error);
@@ -903,19 +903,19 @@ export const getActiveOffers = async () => {
         // Only filter by status - no orderBy
         const q = query(offersRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        
-        let offers = snapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
+
+        let offers = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
         }));
-        
+
         // Sort in JavaScript instead of Firestore
         offers.sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
             return dateB - dateA;
         });
-        
+
         return offers;
     } catch (error) {
         console.error("Error getting active offers:", error);
@@ -946,25 +946,25 @@ export const getProductsWithOffers = async () => {
         const productsRef = collection(db, 'products');
         const q = query(productsRef, where('status', '==', 'active'), where('isAvailable', '==', true));
         const snapshot = await getDocs(q);
-        
+
         const today = new Date().toISOString().split('T')[0];
-        
+
         let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+
         // Filter products with active offers
         const productsWithOffers = products.filter(product => {
             if (!product.hasOffer) return false;
             if (product.offerValidTill && product.offerValidTill < today) return false;
             return true;
         });
-        
+
         // Sort by offer validity (ending soon first)
         productsWithOffers.sort((a, b) => {
             if (!a.offerValidTill) return 1;
             if (!b.offerValidTill) return -1;
             return new Date(a.offerValidTill) - new Date(b.offerValidTill);
         });
-        
+
         return productsWithOffers;
     } catch (error) {
         console.error("Error getting products with offers:", error);
@@ -993,15 +993,15 @@ export const getBannersByType = async (type) => {
         const bannersRef = collection(db, 'banners');
         const q = query(bannersRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        
+
         let allBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+
         // Filter by type in JavaScript
         let filteredBanners = allBanners.filter(banner => banner.type === type);
-        
+
         // Sort by order
         filteredBanners.sort((a, b) => (a.order || 0) - (b.order || 0));
-        
+
         return filteredBanners;
     } catch (error) {
         console.error("Error getting banners by type:", error);
