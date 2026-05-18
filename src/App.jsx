@@ -35,8 +35,7 @@ import ResetPassword from './components/ResetPassword';
 import OccasionBasedFilter from './components/OccasionBasedFilter';  
 import Gallery from './components/Gallery';
 import SmallBannerSlider from './components/SmallBannerSlider';
-
-// IMPORT THIS
+import ReelsSection from './components/ReelsSection';
 
 const logo = '/carlos.png';
 
@@ -255,6 +254,7 @@ function AppContent() {
               cart={cart}
               isLoggedIn={isLoggedIn}
             />
+            <ReelsSection />
             <CelebrationSection />
             <BranchesSection />
             <ReviewsSection />
