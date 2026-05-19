@@ -154,11 +154,26 @@ const AddToCartWithOptions = ({ product, onAddToCart, onClose, isBuyNow = false 
               </button>
               <span className="text-xl font-bold w-12 text-center">{quantity}</span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded-full border border-gray-300 hover:border-pink-500 transition-colors"
+                onClick={() => {
+                  const stockLimit = product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99);
+                  if (quantity >= stockLimit) {
+                    alert("Stock full");
+                    return;
+                  }
+                  setQuantity(quantity + 1);
+                }}
+                disabled={quantity >= (product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99))}
+                className={`w-8 h-8 rounded-full border border-gray-300 transition-colors ${
+                  quantity >= (product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99))
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'hover:border-pink-500'
+                }`}
               >
                 +
               </button>
+              <span className="text-xs text-gray-500">
+                ({product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99)} available)
+              </span>
             </div>
           </div>
 

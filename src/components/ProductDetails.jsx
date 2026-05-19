@@ -142,6 +142,10 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   };
 
   const handleAddToCart = () => {
+    if (isInCart) {
+      navigate('/cart');
+      return;
+    }
     if (!selectedWeight && weightOptions.length > 0) {
       alert('Please select cake weight');
       return;
@@ -246,6 +250,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   const averageRating = product.averageRating || 0;
   const ratingCount = product.ratingCount || 0;
   const offerActive = isOfferValid();
+  const stockLimit = product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99);
+  const isOutOfStock = stockLimit <= 0;
 
   return (
     <div className="pt-32 pb-16 bg-white min-h-screen">
@@ -444,41 +450,64 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
               <div className="flex items-center space-x-4">
-                <div className="flex items-center border border-gray-200 rounded-lg">
+                <div className={`flex items-center border border-gray-200 rounded-lg ${isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="px-4 py-2 hover:bg-gray-50 text-gray-600 text-lg"
+                    disabled={isOutOfStock}
                   >
                     -
                   </button>
                   <span className="px-6 py-2 font-medium text-gray-900 border-x border-gray-200 min-w-[60px] text-center">
-                    {quantity}
+                    {isOutOfStock ? 0 : quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 hover:bg-gray-50 text-gray-600 text-lg"
+                    onClick={() => {
+                      if (quantity >= stockLimit) {
+                        alert("Stock full");
+                        return;
+                      }
+                      setQuantity(quantity + 1);
+                    }}
+                    className={`px-4 py-2 text-lg text-gray-600 ${quantity >= stockLimit ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-50'}`}
+                    disabled={isOutOfStock || quantity >= stockLimit}
                   >
                     +
                   </button>
                 </div>
-                <p className="text-sm text-green-600">✓ In Stock</p>
+                {isOutOfStock ? (
+                  <p className="text-sm text-red-600 font-bold">❌ Out of Stock</p>
+                ) : (
+                  <p className="text-sm text-green-600 font-medium">
+                    {stockLimit <= 5 ? `⚠️ Only ${stockLimit} left in stock!` : `✓ In Stock (${stockLimit} available)`}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="flex gap-4 mb-4">
               <button
                 onClick={handleAddToCart}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${isInCart
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : 'bg-gray-900 hover:bg-pink-600 text-white'
-                  }`}
+                disabled={isOutOfStock}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  isOutOfStock
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : isInCart
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-gray-900 hover:bg-pink-600 text-white'
+                }`}
               >
-                {isInCart ? 'Go to Cart' : 'Add to Cart'}
+                {isOutOfStock ? 'Out of Stock' : isInCart ? 'Go to Cart' : 'Add to Cart'}
               </button>
 
               <button
                 onClick={handleBuyNow}
-                className="flex-1 bg-pink-600 text-white py-3 rounded-xl font-bold text-sm transition-all duration-300 hover:bg-gray-900"
+                disabled={isOutOfStock}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  isOutOfStock
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-pink-600 text-white hover:bg-gray-900'
+                }`}
               >
                 Buy Now
               </button>

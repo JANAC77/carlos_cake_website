@@ -361,6 +361,39 @@ export const createOrder = async (orderData) => {
         const docRef = await addDoc(collection(db, 'orders'), order);
         console.log("Order created with ID:", docRef.id);
 
+        // Update product stock
+        if (orderData.items && Array.isArray(orderData.items)) {
+            for (const item of orderData.items) {
+                if (item.id) {
+                    try {
+                        const productRef = doc(db, 'products', item.id);
+                        const productSnap = await getDoc(productRef);
+                        if (productSnap.exists()) {
+                            const productData = productSnap.data();
+                            const orderQty = Number(item.quantity) || 1;
+                            const updates = { updatedAt: serverTimestamp() };
+
+                            if (productData.stock !== undefined && productData.stock !== null) {
+                                updates.stock = Math.max(0, Number(productData.stock) - orderQty);
+                            }
+                            if (productData.quantity !== undefined && productData.quantity !== null) {
+                                updates.quantity = Math.max(0, Number(productData.quantity) - orderQty);
+                            }
+                            // If neither is present, default to stock
+                            if (updates.stock === undefined && updates.quantity === undefined) {
+                                updates.stock = Math.max(0, 0 - orderQty);
+                            }
+
+                            await updateDoc(productRef, updates);
+                            console.log(`Updated stock for product ${item.id}:`, updates);
+                        }
+                    } catch (stockError) {
+                        console.error(`Error updating stock for product ${item.id}:`, stockError);
+                    }
+                }
+            }
+        }
+
         if (orderData.userId && orderData.userId !== 'guest') {
             try {
                 const userRef = doc(db, 'users', orderData.userId);
@@ -714,6 +747,38 @@ export const cancelOrder = async (orderId, reason = '') => {
             reason: reason,
             cancelledBy: 'user'
         });
+
+        // Restore product stock
+        if (order.items && Array.isArray(order.items)) {
+            for (const item of order.items) {
+                if (item.id) {
+                    try {
+                        const productRef = doc(db, 'products', item.id);
+                        const productSnap = await getDoc(productRef);
+                        if (productSnap.exists()) {
+                            const productData = productSnap.data();
+                            const orderQty = Number(item.quantity) || 1;
+                            const updates = { updatedAt: serverTimestamp() };
+
+                            if (productData.stock !== undefined && productData.stock !== null) {
+                                updates.stock = Number(productData.stock) + orderQty;
+                            }
+                            if (productData.quantity !== undefined && productData.quantity !== null) {
+                                updates.quantity = Number(productData.quantity) + orderQty;
+                            }
+                            if (updates.stock === undefined && updates.quantity === undefined) {
+                                updates.stock = orderQty;
+                            }
+
+                            await updateDoc(productRef, updates);
+                            console.log(`Restored stock for product ${item.id}:`, updates);
+                        }
+                    } catch (stockError) {
+                        console.error(`Error restoring stock for product ${item.id}:`, stockError);
+                    }
+                }
+            }
+        }
 
         await updateDoc(orderRef, {
             status: 'cancelled',

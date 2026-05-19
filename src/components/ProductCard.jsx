@@ -62,6 +62,10 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
+    if (isInCart) {
+      navigate('/cart');
+      return;
+    }
     if (requireLogin('addToCart')) {
       // When adding from card, use base product (user can select weight in cart or details page)
       onAddToCart && onAddToCart(product);

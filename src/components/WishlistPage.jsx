@@ -16,7 +16,7 @@ const WishlistPage = ({ wishlist, onRemove, onMoveToCart, onNavigate, onProductC
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Wishlist is Empty</h2>
                         <p className="text-gray-500 mb-6">Save your favorite items here!</p>
                         <button
-                            onClick={() => onNavigate('home')}
+                            onClick={() => onNavigate('/')}
                             className="inline-block bg-pink-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-900 transition"
                         >
                             Start Shopping
@@ -33,7 +33,7 @@ const WishlistPage = ({ wishlist, onRemove, onMoveToCart, onNavigate, onProductC
                 {/* Back Button */}
                 <div className="mb-8">
                     <button
-                        onClick={() => onNavigate('home')}
+                        onClick={() => onNavigate('/')}
                         className="flex items-center space-x-2 text-gray-500 hover:text-pink-600 transition-colors group"
                     >
                         <ArrowLeft className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" />

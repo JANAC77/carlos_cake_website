@@ -11,6 +11,20 @@ import { getWhatsAppLink } from '../services/whatsappService';
 // Initialize EmailJS
 emailjs.init('YOUR_PUBLIC_KEY');
 
+const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+        if (window.Razorpay) {
+            resolve(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
+
 const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOrder = false, setCart }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -114,11 +128,6 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
         }, 0);
     };
 
-    const subtotal = calculateSubtotal();
-    const DELIVERY_CHARGE = 100;
-    const deliveryCharge = DELIVERY_CHARGE;
-    const total = subtotal + deliveryCharge;
-
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -126,8 +135,13 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
         address: user?.address || '',
         city: user?.city || '',
         pincode: user?.pincode || '',
-        paymentMethod: 'cod'
+        paymentMethod: 'online'
     });
+
+    const subtotal = calculateSubtotal();
+    const DELIVERY_CHARGE = 100;
+    const deliveryCharge = formData.paymentMethod === 'online' ? 0 : DELIVERY_CHARGE;
+    const total = subtotal + deliveryCharge;
 
     const isFormValid = () => {
         if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.pincode) {
@@ -209,8 +223,8 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             sendEmailConfirmation();
         }
     }, [orderSuccess, orderId, emailSent]);
-    
-     useEffect(() => {
+
+    useEffect(() => {
         if (orderSuccess) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -427,6 +441,124 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             createdAt: new Date().toISOString()
         };
 
+        // If online payment is selected
+        if (formData.paymentMethod === 'online') {
+            try {
+                // 1. Load Razorpay script
+                const loaded = await loadRazorpayScript();
+                if (!loaded) {
+                    if (showToast) showToast('Failed to load payment gateway. Please check your internet connection.');
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Create order on backend
+                const response = await fetch('/api/razorpay?action=create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: total,
+                        receipt: `rcpt_${Date.now()}`
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorMsg = await response.json();
+                    throw new Error(errorMsg.message || 'Failed to create payment order');
+                }
+
+                const rzpOrder = await response.json();
+                if (!rzpOrder.success) {
+                    throw new Error(rzpOrder.message || 'Payment initiation failed');
+                }
+
+                // 3. Open Razorpay Checkout modal
+                const options = {
+                    key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_SeVhaDmHrwpZgO',
+                    amount: rzpOrder.amount,
+                    currency: rzpOrder.currency,
+                    name: 'Carlos Cake Cafe',
+                    description: 'Order Payment',
+                    order_id: rzpOrder.orderId,
+                    handler: async function (paymentRes) {
+                        try {
+                            setLoading(true);
+                            if (showToast) showToast('Verifying payment signature...');
+
+                            // 4. Verify payment signature
+                            const verifyResponse = await fetch('/api/razorpay?action=verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: paymentRes.razorpay_order_id,
+                                    razorpay_payment_id: paymentRes.razorpay_payment_id,
+                                    razorpay_signature: paymentRes.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyResponse.json();
+
+                            if (!verifyResponse.ok || !verifyData.success) {
+                                throw new Error(verifyData.message || 'Signature verification failed');
+                            }
+
+                            // 5. Create final database order
+                            const paidOrderData = {
+                                ...orderData,
+                                paymentStatus: 'paid',
+                                razorpayOrderId: paymentRes.razorpay_order_id,
+                                razorpayPaymentId: paymentRes.razorpay_payment_id,
+                                razorpaySignature: paymentRes.razorpay_signature
+                            };
+
+                            const result = await createOrder(paidOrderData);
+
+                            if (result.success) {
+                                setOrderId(result.id);
+                                setOrderSuccess(true);
+                                if (showToast) showToast('Order placed successfully! 🎉');
+                                if (!isSingleProduct && setCart) setCart([]);
+                            } else {
+                                if (showToast) showToast('Database registration failed: ' + result.error);
+                            }
+                        } catch (err) {
+                            console.error('Signature verification error:', err);
+                            if (showToast) showToast('Payment Verification Failed: ' + err.message);
+                        } finally {
+                            setLoading(false);
+                        }
+                    },
+                    prefill: {
+                        name: formData.name,
+                        email: formData.email,
+                        contact: formData.phone
+                    },
+                    notes: {
+                        address: formattedAddress
+                    },
+                    theme: {
+                        color: '#DB2777' // Match your pink theme
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            setLoading(false);
+                            if (showToast) showToast('Payment modal closed.');
+                        }
+                    }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+
+            } catch (error) {
+                console.error('Payment initiation error:', error);
+                if (showToast) showToast('Payment failed: ' + error.message);
+                setLoading(false);
+            }
+            return;
+        }
+
+        // Cash on delivery (COD) or UPI manual orders
         console.log("Order Data being sent:", JSON.stringify(orderData, null, 2));
 
         const result = await createOrder(orderData);
@@ -457,15 +589,15 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             const actualPrice = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
             const quantity = item.quantity || 1;
             itemsText += `${idx + 1}. ${item.name} x${quantity} - ₹${actualPrice * quantity}\n`;
-            
+
             // Show offer savings if applicable
             if (item.hasOffer && item.offerDiscount) {
                 const originalPrice = item.selectedWeight?.price || item.price || 0;
                 if (originalPrice > actualPrice) {
-                    itemsText += `   🎉 Offer: ${item.offerDiscount} (Save ₹${(originalPrice - actualPrice) * quantity})\n`;
+                    itemsText += `    Offer: ${item.offerDiscount} (Save ₹${(originalPrice - actualPrice) * quantity})\n`;
                 }
             }
-            
+
             if (item.addons && item.addons.length > 0) {
                 itemsText += `   Add-ons: ${item.addons.map(a => `${a.name}(+₹${a.price})`).join(', ')}\n`;
             }
@@ -845,7 +977,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Pincode *</label><input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500" required /></div>
                                 <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address *</label><textarea name="address" value={formData.address} onChange={handleInputChange} required rows="3" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500" placeholder="House No, Street, Landmark, Area" /></div>
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">City *</label><input type="text" name="city" value={formData.city} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500" required /></div>
-                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label><select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500"><option value="cod">Cash on Delivery (COD)</option><option value="upi">UPI (Google Pay, PhonePe, Paytm)</option></select></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label><select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500"><option value="online">Online Payment (UPI, Cards, Netbanking)</option><option value="cod">Cash on Delivery (COD)</option></select></div>
                             </div>
                         </div>
                     </div>
@@ -882,8 +1014,8 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                 onClick={handlePlaceOrder}
                                 disabled={loading || !isFormValid()}
                                 className={`w-full py-3 rounded-xl font-bold transition mt-6 ${isFormValid() && !loading
-                                        ? 'bg-pink-600 hover:bg-gray-900 text-white'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-pink-600 hover:bg-gray-900 text-white'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
                                 {loading ? 'Placing Order...' : `Place Order • ₹${total.toFixed(2)}`}
@@ -894,8 +1026,8 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                 onClick={handleWhatsAppOrder}
                                 disabled={!isFormValid()}
                                 className={`w-full py-3 rounded-xl font-bold transition flex items-center justify-center space-x-2 mt-3 ${isFormValid()
-                                        ? 'bg-[#25D366] hover:bg-[#20B859] text-white'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-[#25D366] hover:bg-[#20B859] text-white'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
                                 <FaWhatsapp size={20} />

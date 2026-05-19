@@ -7,6 +7,23 @@ import { generateCartOrderMessage, getWhatsAppLink, sendOrderConfirmation } from
 const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     const navigate = useNavigate();
 
+    const isOfferActive = (item) => {
+        if (!item?.hasOffer) return false;
+        if (item?.offerValidTill) {
+            const today = new Date().toISOString().split('T')[0];
+            if (item.offerValidTill < today) return false;
+        }
+        return true;
+    };
+
+    const getItemPrice = (item) => {
+        const active = isOfferActive(item);
+        if (active) {
+            return item.selectedWeight?.offerPrice || item.offerPrice || item.selectedWeight?.price || item.price || 0;
+        }
+        return item.selectedWeight?.price || item.price || 0;
+    };
+
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -33,7 +50,7 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     }, [user]);
 
     const subtotal = cart.reduce((sum, item) => {
-        const price = item.selectedWeight?.price || item.price || 0;
+        const price = getItemPrice(item);
         return sum + (price * (item.quantity || 1));
     }, 0);
     const deliveryCharge = DELIVERY_CHARGE;
@@ -48,7 +65,13 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     const updateQuantity = (id, delta) => {
         setCart(prev => prev.map(item => {
             if (item.id === id) {
-                const newQty = Math.max(1, (item.quantity || 1) + delta);
+                const stockLimit = item.stock !== undefined && item.stock !== null ? Number(item.stock) : (item.quantity !== undefined && item.quantity !== null ? Number(item.quantity) : 99);
+                const currentQty = item.quantity || 1;
+                if (delta > 0 && currentQty >= stockLimit) {
+                    if (showToast) showToast(`Only ${stockLimit} units available in stock! ⚠️`);
+                    return item;
+                }
+                const newQty = Math.max(1, currentQty + delta);
                 return { ...item, quantity: newQty };
             }
             return item;
@@ -154,7 +177,8 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
                             <div className="divide-y divide-gray-100">
                                 {cart.map((item) => {
-                                    const actualPrice = item.selectedWeight?.price || item.price || 0;
+                                    const actualPrice = getItemPrice(item);
+                                    const originalPrice = item.selectedWeight?.price || item.price || 0;
                                     const itemTotal = actualPrice * (item.quantity || 1);
 
                                     return (
@@ -181,9 +205,12 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-xl font-bold text-pink-600">₹{actualPrice}</p>
+                                                        {isOfferActive(item) && originalPrice > actualPrice && (
+                                                            <p className="text-xs text-gray-400 line-through">₹{originalPrice}</p>
+                                                        )}
                                                         <button
                                                             onClick={() => removeItem(item.id)}
-                                                            className="text-red-500 text-sm hover:text-red-600 mt-1"
+                                                            className="text-red-500 text-sm hover:text-red-600 mt-1 block w-full text-right"
                                                         >
                                                             Remove
                                                         </button>
@@ -210,6 +237,9 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                                     </div>
                                                     <p className="text-gray-500 text-sm">
                                                         Total: ₹{itemTotal}
+                                                        {isOfferActive(item) && originalPrice > actualPrice && (
+                                                            <span className="text-xs text-gray-400 line-through ml-2">₹{originalPrice * (item.quantity || 1)}</span>
+                                                        )}
                                                     </p>
                                                 </div>
                                             </div>
