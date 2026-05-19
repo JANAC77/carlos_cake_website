@@ -1,5 +1,50 @@
 import crypto from 'crypto';
 
+async function parseRequestBody(req) {
+  // 1. If it's already an object with keys, return it
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body) && Object.keys(req.body).length > 0) {
+    return req.body;
+  }
+
+  // 2. If req.body is a Buffer
+  if (req.body && Buffer.isBuffer(req.body)) {
+    try {
+      return JSON.parse(req.body.toString('utf8'));
+    } catch (e) {
+      console.error('Failed to parse req.body Buffer:', e);
+      return {};
+    }
+  }
+
+  // 3. If req.body is a string
+  if (req.body && typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (e) {
+      console.error('Failed to parse req.body string:', e);
+      return {};
+    }
+  }
+
+  // 4. If req.body is empty or a stream, read it manually
+  return new Promise((resolve) => {
+    let bodyStr = '';
+    req.on('data', (chunk) => {
+      bodyStr += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(bodyStr ? JSON.parse(bodyStr) : {});
+      } catch (e) {
+        resolve({});
+      }
+    });
+    req.on('error', () => {
+      resolve({});
+    });
+  });
+}
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -26,18 +71,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, message: 'Razorpay keys not configured on server' });
   }
 
-  // Safe body parsing in case req.body is delivered as string in serverless environment
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      console.error('Failed to parse body string:', e);
-    }
-  }
-  if (!body) {
-    body = {};
-  }
+  const body = await parseRequestBody(req);
 
   // Action: Create Razorpay Order
   if (action === 'create') {
