@@ -462,14 +462,16 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                     })
                 });
 
-                if (!response.ok) {
-                    const errorMsg = await response.json();
-                    throw new Error(errorMsg.message || 'Failed to create payment order');
+                let rzpOrder;
+                const createResponseText = await response.text();
+                try {
+                    rzpOrder = JSON.parse(createResponseText);
+                } catch (e) {
+                    throw new Error(`Server returned ${response.status} during order creation: ${createResponseText.substring(0, 150)}`);
                 }
 
-                const rzpOrder = await response.json();
-                if (!rzpOrder.success) {
-                    throw new Error(rzpOrder.message || 'Payment initiation failed');
+                if (!response.ok || !rzpOrder.success) {
+                    throw new Error(rzpOrder.message || 'Failed to create payment order');
                 }
 
                 // 3. Open Razorpay Checkout modal
@@ -496,11 +498,17 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                 })
                             });
 
-                            const verifyData = await verifyResponse.json();
+                             let verifyData;
+                             const responseText = await verifyResponse.text();
+                             try {
+                                 verifyData = JSON.parse(responseText);
+                             } catch (e) {
+                                 throw new Error(`Server returned ${verifyResponse.status}: ${responseText.substring(0, 150)}`);
+                             }
 
-                            if (!verifyResponse.ok || !verifyData.success) {
-                                throw new Error(verifyData.message || 'Signature verification failed');
-                            }
+                             if (!verifyResponse.ok || !verifyData.success) {
+                                 throw new Error(verifyData.message || 'Signature verification failed');
+                             }
 
                             // 5. Create final database order
                             const paidOrderData = {
