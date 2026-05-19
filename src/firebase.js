@@ -419,6 +419,19 @@ export const createOrder = async (orderData) => {
     }
 };
 
+export const logPaymentError = async (errorData) => {
+    try {
+        await addDoc(collection(db, 'payment_logs'), {
+            ...errorData,
+            createdAt: new Date().toISOString()
+        });
+        return { success: true };
+    } catch (e) {
+        console.error("Error logging payment error:", e);
+        return { success: false };
+    }
+};
+
 export const getUserOrders = async (userId) => {
     try {
         if (!userId) return [];

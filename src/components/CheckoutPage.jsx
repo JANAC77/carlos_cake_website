@@ -1,7 +1,7 @@
 // src/components/CheckoutPage.jsx - With Offer Support
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { createOrder, getAddOns, getOccasions } from '../firebase';
+import { createOrder, getAddOns, getOccasions, logPaymentError } from '../firebase';
 import { sendOrderConfirmationEmail } from '../services/emailService';
 import emailjs from '@emailjs/browser';
 import DeliveryScheduler from './DeliveryScheduler';
@@ -462,16 +462,14 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                     })
                 });
 
-                let rzpOrder;
-                const createResponseText = await response.text();
-                try {
-                    rzpOrder = JSON.parse(createResponseText);
-                } catch (e) {
-                    throw new Error(`Server returned ${response.status} during order creation: ${createResponseText.substring(0, 150)}`);
+                if (!response.ok) {
+                    const errorMsg = await response.json();
+                    throw new Error(errorMsg.message || 'Failed to create payment order');
                 }
 
-                if (!response.ok || !rzpOrder.success) {
-                    throw new Error(rzpOrder.message || 'Failed to create payment order');
+                const rzpOrder = await response.json();
+                if (!rzpOrder.success) {
+                    throw new Error(rzpOrder.message || 'Payment initiation failed');
                 }
 
                 // 3. Open Razorpay Checkout modal
@@ -498,17 +496,11 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                 })
                             });
 
-                             let verifyData;
-                             const responseText = await verifyResponse.text();
-                             try {
-                                 verifyData = JSON.parse(responseText);
-                             } catch (e) {
-                                 throw new Error(`Server returned ${verifyResponse.status}: ${responseText.substring(0, 150)}`);
-                             }
+                            const verifyData = await verifyResponse.json();
 
-                             if (!verifyResponse.ok || !verifyData.success) {
-                                 throw new Error(verifyData.message || 'Signature verification failed');
-                             }
+                            if (!verifyResponse.ok || !verifyData.success) {
+                                throw new Error(verifyData.message || 'Signature verification failed');
+                            }
 
                             // 5. Create final database order
                             const paidOrderData = {
@@ -532,6 +524,13 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                         } catch (err) {
                             console.error('Signature verification error:', err);
                             if (showToast) showToast('Payment Verification Failed: ' + err.message);
+                            logPaymentError({
+                                step: 'verify_signature',
+                                message: err.message,
+                                userId: user?.uid || 'guest',
+                                orderData: orderData || null,
+                                paymentRes: paymentRes || null
+                            });
                         } finally {
                             setLoading(false);
                         }
@@ -561,6 +560,12 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             } catch (error) {
                 console.error('Payment initiation error:', error);
                 if (showToast) showToast('Payment failed: ' + error.message);
+                logPaymentError({
+                    step: 'payment_initiation',
+                    message: error.message,
+                    userId: user?.uid || 'guest',
+                    orderData: orderData || null
+                });
                 setLoading(false);
             }
             return;
