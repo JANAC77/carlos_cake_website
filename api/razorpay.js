@@ -18,17 +18,30 @@ export default async function handler(req, res) {
 
   const { action } = req.query;
 
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const keyId = process.env.RAZORPAY_KEY_ID ? process.env.RAZORPAY_KEY_ID.trim() : undefined;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET ? process.env.RAZORPAY_KEY_SECRET.trim() : undefined;
 
   if (!keyId || !keySecret) {
     console.error('Razorpay keys are not configured in environment variables');
     return res.status(500).json({ success: false, message: 'Razorpay keys not configured on server' });
   }
 
+  // Safe body parsing in case req.body is delivered as string in serverless environment
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {
+      console.error('Failed to parse body string:', e);
+    }
+  }
+  if (!body) {
+    body = {};
+  }
+
   // Action: Create Razorpay Order
   if (action === 'create') {
-    const { amount, receipt } = req.body;
+    const { amount, receipt } = body;
 
     if (!amount) {
       return res.status(400).json({ message: 'Amount is required' });
@@ -72,7 +85,7 @@ export default async function handler(req, res) {
 
   // Action: Verify Payment Signature
   if (action === 'verify') {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({ message: 'Missing required signature parameters' });
@@ -87,6 +100,12 @@ export default async function handler(req, res) {
       if (generatedSignature === razorpay_signature) {
         return res.status(200).json({ success: true, message: 'Payment verified successfully' });
       } else {
+        console.error('Signature mismatch:', {
+          generated: generatedSignature,
+          received: razorpay_signature,
+          orderId: razorpay_order_id,
+          paymentId: razorpay_payment_id
+        });
         return res.status(400).json({ success: false, message: 'Invalid payment signature' });
       }
     } catch (error) {
