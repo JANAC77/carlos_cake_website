@@ -98,7 +98,7 @@ const PrivacyPolicy = () => {
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Contact Us</h2>
                         <p className="text-gray-600 leading-relaxed">
                             For privacy-related questions, contact us at:<br />
-                            Email: carloscakecafe@gmail.com<br />
+                            Email: carloscakecafe26@gmail.com<br />
                             Phone: +91 98809 44843
                         </p>
                     </section>

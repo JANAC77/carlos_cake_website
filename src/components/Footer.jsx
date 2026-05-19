@@ -157,8 +157,8 @@ const Footer = ({ logo }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <a href="mailto:carloscakecafe@gmail.com" className="text-sm break-all hover:text-pink-500 transition-colors">
-                  carloscakecafe@gmail.com
+                <a href="mailto:carloscakecafe26@gmail.com" className="text-sm break-all hover:text-pink-500 transition-colors">
+                  carloscakecafe26@gmail.com
                 </a>
               </li>
             </ul>
@@ -168,7 +168,8 @@ const Footer = ({ logo }) => {
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-600 font-medium text-[10px] uppercase tracking-[0.2em]">
-            © 2026 Carlos Cakes. All Rights Reserved.
+            © 2026 Carlos Cakes. All Rights Reserved. <br />
+            Developed with by Innomatrics Technologies
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link

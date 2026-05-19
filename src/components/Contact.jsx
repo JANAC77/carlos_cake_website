@@ -31,12 +31,12 @@ const Contact = () => {
     try {
       // Use the email service function
       const result = await sendContactFormEmail(formData);
-      
+
       if (result.success) {
         console.log('Email sent successfully!');
         setSubmitted(true);
         setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-        
+
         // Auto hide success message after 5 seconds
         setTimeout(() => setSubmitted(false), 5000);
       } else {
@@ -52,7 +52,7 @@ const Contact = () => {
 
   const contactInfo = [
     { icon: FaPhone, title: 'Phone', details: ['+91 98809 44843', '+91 77953 22889'], color: 'text-green-500' },
-    { icon: FaEnvelope, title: 'Email', details: ['carloscakecafe@gmail.com'], color: 'text-blue-500' },
+    { icon: FaEnvelope, title: 'Email', details: ['carloscakecafe26@gmail.com'], color: 'text-blue-500' },
     { icon: FaMapMarkerAlt, title: 'Address', details: ['#3, Bellandur Gate, Sarjapur Road', 'Near Spencer Hyper Market, Bangalore-560068'], color: 'text-red-500' },
     { icon: FaClock, title: 'Business Hours', details: ['Monday - Sunday: 9:00 AM - 10:00 PM'], color: 'text-purple-500' }
   ];
@@ -76,7 +76,7 @@ const Contact = () => {
             <h2 className="text-2xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight mb-6">
               Send Us a Message
             </h2>
-            
+
             {/* Success Message */}
             {submitted && (
               <div className="mb-6 p-4 bg-green-100 border border-green-200 rounded-xl animate-slide-down">
@@ -178,9 +178,8 @@ const Contact = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full bg-pink-600 text-white py-4 rounded-xl font-bold hover:bg-gray-900 transition-all ${
-                  loading ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
+                className={`w-full bg-pink-600 text-white py-4 rounded-xl font-bold hover:bg-gray-900 transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
               >
                 {loading ? (
                   <div className="flex items-center justify-center space-x-2">
@@ -232,7 +231,7 @@ const Contact = () => {
                 title="Carlos Cake Cafe Location"
               ></iframe>
             </div>
-   
+
           </div>
         </div>
       </div>

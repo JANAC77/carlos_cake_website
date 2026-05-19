@@ -120,7 +120,7 @@ const TermsConditions = () => {
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Contact Information</h2>
                         <p className="text-gray-600 leading-relaxed">
                             For questions about these Terms & Conditions:<br />
-                            Email: carloscakecafe@gmail.com<br />
+                            Email: carloscakecafe26@gmail.com<br />
                             Phone: +91 98809 44843<br />
                             Address: #3, Bellandur Gate, Sarjapur Road, Bangalore-560068
                         </p>
