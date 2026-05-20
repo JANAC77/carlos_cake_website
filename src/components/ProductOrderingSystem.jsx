@@ -54,7 +54,7 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().split('T')[0];
-    
+
     // Load available time slots
     loadTimeSlots();
   }, [deliveryDate]);
@@ -98,7 +98,7 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
 
   const handlePlaceOrder = async () => {
     setLoading(true);
-    
+
     const orderData = {
       userId: user?.id || 'guest',
       customerName: user?.name || '',
@@ -128,13 +128,13 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
     };
 
     const result = await createOrder(orderData);
-    
+
     if (result.success) {
       onOrderSuccess && onOrderSuccess(result.id);
     } else {
       alert('Order failed: ' + result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -162,9 +162,8 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
               <div className="flex items-center space-x-2 mt-2">
                 {[1, 2, 3, 4].map((s) => (
                   <div key={s} className="flex items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      step >= s ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-500'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-500'
+                      }`}>
                       {s}
                     </div>
                     {s < 4 && <div className={`w-8 h-0.5 ${step > s ? 'bg-pink-500' : 'bg-gray-200'}`}></div>}
@@ -215,11 +214,10 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
                         <button
                           key={flavor}
                           onClick={() => setCustomCakeDetails({ ...customCakeDetails, flavor })}
-                          className={`p-2 rounded-lg border transition-all ${
-                            customCakeDetails.flavor === flavor 
-                              ? 'border-pink-500 bg-pink-50 text-pink-600' 
+                          className={`p-2 rounded-lg border transition-all ${customCakeDetails.flavor === flavor
+                              ? 'border-pink-500 bg-pink-50 text-pink-600'
                               : 'border-gray-200 hover:border-pink-200'
-                          }`}
+                            }`}
                         >
                           {flavor}
                         </button>
@@ -234,11 +232,10 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
                         <button
                           key={size.name}
                           onClick={() => setCustomCakeDetails({ ...customCakeDetails, size: size.name })}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            customCakeDetails.size === size.name 
-                              ? 'border-pink-500 bg-pink-50' 
+                          className={`p-3 rounded-xl border text-left transition-all ${customCakeDetails.size === size.name
+                              ? 'border-pink-500 bg-pink-50'
                               : 'border-gray-200 hover:border-pink-200'
-                          }`}
+                            }`}
                         >
                           <p className="font-bold">{size.name}</p>
                           <p className="text-xs text-gray-500">Serves {size.serves}</p>
@@ -297,11 +294,10 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
                         <button
                           key={addon.id}
                           onClick={() => handleAddonToggle(addon)}
-                          className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                            addons.find(a => a.id === addon.id)
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all ${addons.find(a => a.id === addon.id)
                               ? 'border-pink-500 bg-pink-50'
                               : 'border-gray-200 hover:border-pink-200'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center space-x-2">
                             <span className="text-xl">{addon.icon}</span>
@@ -356,11 +352,10 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
                     <button
                       key={area.name}
                       onClick={() => handleDeliveryAreaChange(area)}
-                      className={`flex justify-between items-center p-4 rounded-xl border transition-all ${
-                        deliveryArea === area.name
+                      className={`flex justify-between items-center p-4 rounded-xl border transition-all ${deliveryArea === area.name
                           ? 'border-pink-500 bg-pink-50'
                           : 'border-gray-200 hover:border-pink-200'
-                      }`}
+                        }`}
                     >
                       <div>
                         <p className="font-bold">{area.name}</p>
@@ -393,11 +388,10 @@ const ProductOrderingSystem = ({ product, user, onClose, onOrderSuccess }) => {
                     <button
                       key={slot}
                       onClick={() => setDeliveryTimeSlot(slot)}
-                      className={`p-2 rounded-lg border text-center transition-all ${
-                        deliveryTimeSlot === slot
+                      className={`p-2 rounded-lg border text-center transition-all ${deliveryTimeSlot === slot
                           ? 'border-pink-500 bg-pink-50 text-pink-600'
                           : 'border-gray-200 hover:border-pink-200'
-                      }`}
+                        }`}
                     >
                       {slot}
                       {slot.includes('PM') && <span className="block text-xs text-gray-400">Evening</span>}

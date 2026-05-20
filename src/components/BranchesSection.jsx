@@ -27,14 +27,14 @@ const BranchesSection = () => {
             </h3>
           </div>
           <p className="text-gray-500 font-medium max-w-xs text-xs leading-relaxed">
-            Find your nearest Carlos Cake Café and experience the magic of artisanal baking.
+            Find your nearest Carlos Cake Cafe and experience the magic of artisanal baking.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {branches.map((branch) => (
-            <div 
-              key={branch.id} 
+            <div
+              key={branch.id}
               className="group relative bg-white p-6 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 transition-all duration-500 hover:shadow-[0_20px_40px_rgba(236,72,153,0.08)] hover:-translate-y-2 overflow-hidden"
             >
               {/* Background Accent */}
@@ -51,7 +51,7 @@ const BranchesSection = () => {
                 <h4 className="text-xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight mb-2">
                   {branch.name}
                 </h4>
-                
+
                 <div className="space-y-2 mb-8">
                   <div className="flex items-center space-x-2 text-red-600 font-bold tracking-widest text-sm">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

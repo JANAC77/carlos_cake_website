@@ -54,10 +54,10 @@ const Footer = ({ logo }) => {
   ];
 
   const serviceLinks = [
-    { name: 'Birthday Cakes', path: '/category/birthday-cakes' },
-    { name: 'Wedding Cakes', path: '/category/wedding-cakes' },
-    { name: 'Custom Cakes', path: '/category/custom-cakes' },
-    { name: 'Cupcakes', path: '/category/cupcakes' },
+    { name: 'Fresh Cream Cakes', path: '/category/fresh-cream-cakes' },
+    { name: 'Design Cakes', path: '/category/design-cakes' },
+    { name: 'Chocolate Cakes', path: '/category/choclate-cakes' },
+
   ];
 
   return (
