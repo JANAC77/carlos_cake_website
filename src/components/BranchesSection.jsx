@@ -2,7 +2,7 @@ const branches = [
   { id: 1, name: 'Munekolal', phone: '+91 81477 51838' },
   { id: 2, name: 'Marathahalli', phone: '+91 91080 80444' },
   { id: 3, name: 'Bellandur', phone: '+91 81477 51838' },
-  { id: 4, name: 'Sarjapur Road', phone: '+91 98809 44843' },
+  { id: 4, name: 'Sarjapur Road', phone: '+91 81477 51838 ' },
   { id: 5, name: 'Electronic City', phone: '+91 63663 85588' },
 ];
 

@@ -121,7 +121,7 @@ const TermsConditions = () => {
                         <p className="text-gray-600 leading-relaxed">
                             For questions about these Terms & Conditions:<br />
                             Email: carloscakecafe26@gmail.com<br />
-                            Phone: +91 98809 44843<br />
+                            Phone: +91 81477 51838 <br />
                             Address: #3, Bellandur Gate, Sarjapur Road, Bangalore-560068
                         </p>
                     </section>

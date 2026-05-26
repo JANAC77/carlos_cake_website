@@ -145,7 +145,7 @@ const Footer = ({ logo }) => {
                   </svg>
                 </div>
                 <div className="flex flex-col space-y-1">
-                  <a href="tel:+919880944843" className="text-sm hover:text-pink-500 transition-colors">+91 98809 44843</a>
+                  <a href="tel:+918147751838 " className="text-sm hover:text-pink-500 transition-colors">+91 81477 51838 </a>
                   <a href="tel:+917795322889" className="text-sm hover:text-pink-500 transition-colors">+91 77953 22889</a>
                 </div>
               </li>

@@ -112,7 +112,7 @@ const RefundPolicy = () => {
                         </p>
                         <ul className="list-disc list-inside space-y-2 text-gray-600 ml-4 mt-4">
                             <li>Email: carloscakecafe26@gmail.com</li>
-                            <li>Phone: +91 98809 44843</li>
+                            <li>Phone: +91 81477 51838 </li>
                             <li>Through your order history on our website</li>
                             <li>Provide your order ID and reason for refund</li>
                         </ul>
@@ -135,7 +135,7 @@ const RefundPolicy = () => {
                         <h3 className="font-bold text-gray-900 mb-2">Need Help?</h3>
                         <p className="text-gray-600 text-sm">
                             For any refund-related queries, please contact our customer support:<br />
-                            📞 Phone: +91 98809 44843<br />
+                            📞 Phone: +91 81477 51838 <br />
                             📧 Email: carloscakecafe26@gmail.com<br />
                             ⏰ Hours: 9:00 AM - 10:00 PM (Daily)
                         </p>

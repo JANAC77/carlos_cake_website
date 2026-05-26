@@ -1,7 +1,7 @@
 // src/services/whatsappService.js
 
 // WhatsApp configuration
-const WHATSAPP_NUMBER = "918489091148"; // Your WhatsApp number (without + symbol)
+const WHATSAPP_NUMBER = "918147751838 "; // Your WhatsApp number (without + symbol)
 
 // Base URL for WhatsApp API
 const WHATSAPP_API_URL = "https://api.whatsapp.com/send";
@@ -144,7 +144,7 @@ export const generateQuickConfirmationMessage = (orderType, items, estimatedTime
 
   message += `\n*Estimated Delivery:* ${estimatedTime}\n`;
   message += `*Payment:* Cash on Delivery\n\n`;
-  message += `We'll confirm your order shortly. For urgent queries, call us at +91 75029 81623.\n\n`;
+  message += `We'll confirm your order shortly. For urgent queries, call us at +91 81477 51838 .\n\n`;
   message += `*Carlos Cake Cafe* 🍰\n`;
   message += `#3, Bellandur Gate, Sarjapur Road, Bangalore`;
 

@@ -12,7 +12,7 @@ const WhatsAppButton = () => {
     const [showForm, setShowForm] = useState(false);
     const [orderItems, setOrderItems] = useState([]);
 
-    const whatsappNumber = "918489091148";
+    const whatsappNumber = "918147751838 ";
     const whatsappLink = `https://wa.me/${whatsappNumber}`;
 
     const quickInquiryOptions = [
@@ -207,7 +207,7 @@ const WhatsAppButton = () => {
                         <div className="sticky bottom-0 bg-gray-50 p-4 border-t text-center">
                             <p className="text-xs text-gray-500">
                                 📍 Business Hours: 9:00 AM - 10:00 PM (Daily)<br />
-                                📞 Call us: +91 75029 81623
+                                📞 Call us: +91 81477 51838
                             </p>
                         </div>
                     </div>

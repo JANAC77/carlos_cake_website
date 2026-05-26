@@ -99,7 +99,7 @@ const PrivacyPolicy = () => {
                         <p className="text-gray-600 leading-relaxed">
                             For privacy-related questions, contact us at:<br />
                             Email: carloscakecafe26@gmail.com<br />
-                            Phone: +91 98809 44843
+                            Phone: +91 81477 51838
                         </p>
                     </section>
                 </div>

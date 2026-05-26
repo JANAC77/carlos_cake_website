@@ -44,14 +44,14 @@ const Contact = () => {
       }
     } catch (err) {
       console.error('Email sending error:', err);
-      setError('Failed to send message. Please try again or call us directly at +91 98809 44843');
+      setError('Failed to send message. Please try again or call us directly at +91 81477 51838 ');
     } finally {
       setLoading(false);
     }
   };
 
   const contactInfo = [
-    { icon: FaPhone, title: 'Phone', details: ['+91 98809 44843', '+91 77953 22889'], color: 'text-green-500' },
+    { icon: FaPhone, title: 'Phone', details: ['+91 81477 51838 ', '+91 77953 22889'], color: 'text-green-500' },
     { icon: FaEnvelope, title: 'Email', details: ['carloscakecafe26@gmail.com'], color: 'text-blue-500' },
     { icon: FaMapMarkerAlt, title: 'Address', details: ['#3, Bellandur Gate, Sarjapur Road', 'Near Spencer Hyper Market, Bangalore-560068'], color: 'text-red-500' },
     { icon: FaClock, title: 'Business Hours', details: ['Monday - Sunday: 9:00 AM - 10:00 PM'], color: 'text-purple-500' }
