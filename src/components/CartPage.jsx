@@ -7,6 +7,14 @@ import { generateCartOrderMessage, getWhatsAppLink, sendOrderConfirmation } from
 const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     const navigate = useNavigate();
 
+    const getCleanCategoryName = (categoryName) => {
+        const name = categoryName || '';
+        if (name.toLowerCase().includes('choclate') || name.toLowerCase().includes('chocolate')) return 'Chocolate Cakes';
+        if (name.toLowerCase().includes('design')) return 'Designer Cakes';
+        if (name.toLowerCase().includes('fresh cream')) return 'Fresh Cream Cakes';
+        return name;
+    };
+
     const isOfferActive = (item) => {
         if (!item?.hasOffer) return false;
         if (item?.offerValidTill) {
@@ -65,7 +73,7 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     const updateQuantity = (id, delta) => {
         setCart(prev => prev.map(item => {
             if (item.id === id) {
-                const stockLimit = item.stock !== undefined && item.stock !== null ? Number(product.stock) : (item.quantity !== undefined && item.quantity !== null ? Number(item.quantity) : 99);
+                const stockLimit = item.stock !== undefined && item.stock !== null ? Number(item.stock) : 99;
                 const currentQty = item.quantity || 1;
                 if (delta > 0 && currentQty >= stockLimit) {
                     if (showToast) showToast(`Only ${stockLimit} available! ⚠️`);
@@ -199,12 +207,10 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                         <div className="flex justify-between gap-4">
                                             <div>
                                                 <h3 className="font-bold text-gray-900 text-base">{item.name}</h3>
-                                                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mt-0.5">{item.category || 'Cake'}</p>
-                                                {item.selectedWeight && (
-                                                    <span className="inline-block mt-2 text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                                                        {item.selectedWeight.label}
-                                                    </span>
-                                                )}
+                                                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mt-0.5">{getCleanCategoryName(item.categoryName || item.category || 'Cake')}</p>
+                                                <span className="inline-block mt-2 text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                                    {item.selectedWeight?.label || '1 kg'}
+                                                </span>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-lg font-black text-rose-gold">₹{actualPrice}</p>

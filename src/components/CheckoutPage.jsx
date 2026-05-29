@@ -42,6 +42,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
     const [locationError, setLocationError] = useState('');
     const [emailSent, setEmailSent] = useState(false);
     const [orderSchedule, setOrderSchedule] = useState(null);
+    const [confirmedOrder, setConfirmedOrder] = useState(null);
 
     // Add-ons state
     const [selectedAddons, setSelectedAddons] = useState([]);
@@ -72,7 +73,13 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                 addons: selectedAddons || [],
                 cakeMessage: cakeMessage || '',
                 occasion: occasion || '',
-                selectedWeight: buyNowProduct.selectedWeight || null
+                selectedWeight: buyNowProduct.selectedWeight || {
+                    weight: "1",
+                    label: "1 kg",
+                    price: buyNowProduct.price || 0,
+                    offerPrice: buyNowProduct.offerPrice || null,
+                    serves: "4-6 people"
+                }
             }];
         }
         // For cart items, safe mapping with offer support
@@ -91,7 +98,13 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             addons: item.addons || [],
             cakeMessage: item.cakeMessage || '',
             occasion: item.occasion || '',
-            selectedWeight: item.selectedWeight || null
+            selectedWeight: item.selectedWeight || {
+                weight: "1",
+                label: "1 kg",
+                price: item.price || 0,
+                offerPrice: item.offerPrice || null,
+                serves: "4-6 people"
+            }
         }));
     };
 
@@ -515,6 +528,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
                             if (result.success) {
                                 setOrderId(result.id);
+                                setConfirmedOrder(paidOrderData);
                                 setOrderSuccess(true);
                                 if (showToast) showToast('Order placed successfully! 🎉');
                                 if (!isSingleProduct && setCart) setCart([]);
@@ -578,6 +592,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
         if (result.success) {
             setOrderId(result.id);
+            setConfirmedOrder(orderData);
             setOrderSuccess(true);
             if (showToast) showToast('Order placed successfully! ');
             if (!isSingleProduct && setCart) setCart([]);
@@ -660,15 +675,13 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                             </div>
                         )}
 
-                        {item.selectedWeight && item.selectedWeight.label && (
-                            <div className="mt-1">
-                                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                                    <span>⚖️</span>
-                                    <span>{item.selectedWeight.label}</span>
-                                    <span>(Serves: {item.selectedWeight.serves || 'N/A'})</span>
-                                </span>
-                            </div>
-                        )}
+                        <div className="mt-1">
+                            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <span>⚖️</span>
+                                <span>{item.selectedWeight?.label || '1 kg'}</span>
+                                <span>(Serves: {item.selectedWeight?.serves || '4-6 people'})</span>
+                            </span>
+                        </div>
 
                         {item.occasion && (
                             <p className="text-xs text-blue-600 mt-1"> Occasion: {item.occasion}</p>
@@ -707,6 +720,80 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
     // Order Confirmation Component
     const OrderConfirmation = () => {
+        const confirmedItems = confirmedOrder?.items || [];
+        const confirmedProductTotal = confirmedItems.reduce((sum, item) => {
+            const price = item.price || 0;
+            const quantity = item.quantity || 1;
+            return sum + (price * quantity);
+        }, 0);
+        const confirmedAddonsTotal = confirmedItems.reduce((sum, item) => {
+            const addonsTotal = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+            return sum + addonsTotal;
+        }, 0);
+        const confirmedDeliveryCharge = confirmedOrder?.deliveryCharge || 0;
+        const confirmedTotal = confirmedOrder?.total || 0;
+
+        const renderConfirmedOrderItems = () => {
+            return confirmedItems.map((item, index) => {
+                const actualPrice = item.price || 0;
+                const quantity = item.quantity || 1;
+                const itemTotal = actualPrice * quantity;
+                const addonsTotalItem = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);
+                const totalItemPrice = itemTotal + addonsTotalItem;
+
+                return (
+                    <div key={item.id || index} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-xl mb-3">
+                        <div className="w-16 h-16 bg-pink-50 rounded-xl overflow-hidden flex-shrink-0">
+                            <img
+                                src={item.image || '/placeholder.png'}
+                                alt={item.name || 'Product'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = '/placeholder.png'; }}
+                            />
+                        </div>
+                        <div className="flex-grow">
+                            <h4 className="font-bold text-gray-900">{item.name || 'Product'}</h4>
+                            <p className="text-gray-500 text-sm">Quantity: {quantity}</p>
+
+                            <div className="mt-1">
+                                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                    <span>⚖️</span>
+                                    <span>{item.selectedWeight?.label || '1 kg'}</span>
+                                </span>
+                            </div>
+
+                            {item.occasion && (
+                                <p className="text-xs text-blue-600 mt-1"> Occasion: {item.occasion}</p>
+                            )}
+
+                            {item.addons && item.addons.length > 0 && (
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 font-medium">Add-ons:</p>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {item.addons.map((addon, addonIdx) => (
+                                            <span key={addon.id || addonIdx} className="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                                <span>{addon.name}</span>
+                                                <span className="font-bold">(+₹{addon.price || 0})</span>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {item.cakeMessage && (
+                                <div className="mt-2 p-2 bg-purple-50 rounded-lg">
+                                    <p className="text-xs text-purple-600">💬 Message: "{item.cakeMessage}"</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold text-pink-600">₹{totalItemPrice}</p>
+                        </div>
+                    </div>
+                );
+            });
+        };
+
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 pt-32 pb-24">
                 <div className="max-w-3xl mx-auto px-6">
@@ -757,25 +844,25 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                             </div>
                         </div>
                         <div className="p-6">
-                            <div className="space-y-3 mb-6">{renderOrderItems()}</div>
+                            <div className="space-y-3 mb-6">{renderConfirmedOrderItems()}</div>
                             <div className="border-t border-gray-100 pt-3 space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Product Total</span>
-                                    <span>₹{productTotal.toFixed(2)}</span>
+                                    <span>₹{confirmedProductTotal.toFixed(2)}</span>
                                 </div>
-                                {addonsTotal > 0 && (
+                                {confirmedAddonsTotal > 0 && (
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-500">Add-ons Total</span>
-                                        <span className="text-pink-600">+₹{addonsTotal.toFixed(2)}</span>
+                                        <span className="text-pink-600">+₹{confirmedAddonsTotal.toFixed(2)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Delivery Fee</span>
-                                    <span className="text-red-500">₹{deliveryCharge}</span>
+                                    <span className="text-red-500">₹{confirmedDeliveryCharge}</span>
                                 </div>
                                 <div className="flex justify-between pt-2 border-t">
                                     <span className="font-bold text-gray-900">Total</span>
-                                    <span className="font-bold text-pink-600 text-xl">₹{total.toFixed(2)}</span>
+                                    <span className="font-bold text-pink-600 text-xl">₹{confirmedTotal.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>

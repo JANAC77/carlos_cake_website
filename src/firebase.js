@@ -303,15 +303,50 @@ export const getCategories = async () => {
         const categoriesRef = collection(db, 'categories');
         const q = query(categoriesRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
+        const categories = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
+
+        // Virtualize "Design Cakes" category if not returned by Firestore
+        const hasDesignCakes = categories.some(cat => cat.id === 'H0Lfi1ddap5ingjHPsuo' || cat.name?.toLowerCase().includes('design'));
+        if (!hasDesignCakes) {
+            categories.push({
+                id: 'H0Lfi1ddap5ingjHPsuo',
+                name: 'Design Cakes',
+                status: 'active',
+                image: 'https://carlos-cake-admin.onrender.com/api/image/6a05d1bf95f68d0e213ddee6',
+                imageId: '6a05d1bf95f68d0e213ddee6',
+                description: 'Crafted for every celebration with custom designs and rich flavours'
+            });
+        }
+
+        return categories;
     } catch (error) {
         console.error("Error getting categories:", error);
-        return [];
+        // Return design cakes virtual category anyway as a fallback
+        return [
+            {
+                id: 'H0Lfi1ddap5ingjHPsuo',
+                name: 'Design Cakes',
+                status: 'active',
+                image: 'https://carlos-cake-admin.onrender.com/api/image/6a05d1bf95f68d0e213ddee6',
+                imageId: '6a05d1bf95f68d0e213ddee6',
+                description: 'Crafted for every celebration with custom designs and rich flavours'
+            }
+        ];
     }
 };
 
 export const getCategoryById = async (id) => {
     try {
+        if (id === 'H0Lfi1ddap5ingjHPsuo') {
+            return {
+                id: 'H0Lfi1ddap5ingjHPsuo',
+                name: 'Design Cakes',
+                status: 'active',
+                image: 'https://carlos-cake-admin.onrender.com/api/image/6a05d1bf95f68d0e213ddee6',
+                imageId: '6a05d1bf95f68d0e213ddee6',
+                description: 'Crafted for every celebration with custom designs and rich flavours'
+            };
+        }
         const docRef = doc(db, 'categories', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {

@@ -71,7 +71,8 @@ const CategorySection = () => {
     if (name.includes('wedding')) return '/category/wedding-cakes';
     if (name.includes('custom')) return '/category/custom-cakes';
     if (name.includes('cupcake')) return '/category/cupcakes';
-    if (name.includes('chocolate')) return '/category/chocolate-cakes';
+    if (name.includes('chocolate') || name.includes('choclate')) return '/category/chocolate-cakes';
+    if (name.includes('design')) return '/category/designer-cakes';
     if (name.includes('fruit')) return '/category/fruit-cakes';
     return `/category/${name.replace(/\s+/g, '-')}`;
   };

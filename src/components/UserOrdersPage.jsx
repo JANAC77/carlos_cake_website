@@ -196,15 +196,13 @@ const UserOrdersPage = ({ user, onNavigate }) => {
                                 <p className="text-sm text-gray-500">Quantity: {item.quantity || 1}</p>
 
                                 {/* Display Weight */}
-                                {item.selectedWeight && (
-                                    <div className="mt-1">
-                                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                                            <span>⚖️</span>
-                                            <span>{item.selectedWeight.label}</span>
-                                            <span>(Serves: {item.selectedWeight.serves})</span>
-                                        </span>
-                                    </div>
-                                )}
+                                <div className="mt-1">
+                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                        <span>⚖️</span>
+                                        <span>{item.selectedWeight?.label || '1 kg'}</span>
+                                        <span>(Serves: {item.selectedWeight?.serves || '4-6 people'})</span>
+                                    </span>
+                                </div>
 
                                 {/* Display Occasion */}
                                 {item.occasion && (

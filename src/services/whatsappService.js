@@ -13,17 +13,19 @@ export const generateProductOrderMessage = (product, quantity = 1, addons = [], 
   let message = "🍰 *New Cake Order Request* 🍰\n\n";
   message += `*Item:* ${product.name}\n`;
 
-  if (selectedWeight && selectedWeight.label) {
-    message += `*Weight:* ${selectedWeight.label}\n`;
-    message += `*Serves:* ${selectedWeight.serves}\n`;
-    message += `*Base Price:* ₹${product.price}\n`;
-    message += `*Weight Price:* ₹${selectedWeight.price}\n`;
-  } else {
-    message += `*Price:* ₹${product.price}\n`;
-  }
+  const weight = selectedWeight || product.selectedWeight || {
+    weight: "1",
+    label: "1 kg",
+    price: product.price || 0,
+    serves: "4-6 people"
+  };
+
+  message += `*Weight:* ${weight.label}\n`;
+  message += `*Serves:* ${weight.serves || '4-6 people'}\n`;
+  message += `*Price:* ₹${weight.price}\n`;
 
   message += `*Quantity:* ${quantity}\n`;
-  message += `*Subtotal:* ₹${(selectedWeight?.price || product.price) * quantity}\n\n`;
+  message += `*Subtotal:* ₹${(weight.price) * quantity}\n\n`;
 
   if (occasion) {
     message += `*Occasion:* ${occasion}\n`;
@@ -58,9 +60,7 @@ export const generateCartOrderMessage = (cart, subtotal, deliveryCharge, total) 
     message += `   Price: ₹${itemPrice}\n`;
     message += `   Total: ₹${itemTotal}\n`;
 
-    if (item.selectedWeight?.label) {
-      message += `   Weight: ${item.selectedWeight.label}\n`;
-    }
+    message += `   Weight: ${item.selectedWeight?.label || '1 kg'}\n`;
 
     if (item.occasion) {
       message += `   Occasion: ${item.occasion}\n`;

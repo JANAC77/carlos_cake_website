@@ -36,6 +36,8 @@ import OccasionBasedFilter from './components/OccasionBasedFilter';
 import Gallery from './components/Gallery';
 import SmallBannerSlider from './components/SmallBannerSlider';
 import ReelsSection from './components/ReelsSection';
+import HomeSEOContent from './components/HomeSEOContent';
+import { useSEO } from './hooks/useSEO';
 
 const logo = '/carlos.png';
 
@@ -61,7 +63,66 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [cart, setCart] = useState(() => loadFromLocalStorage('cart', []));
+  // Central SEO Metadata for static routes
+  const staticSEO = {
+    '/': {
+      title: 'Carlos Cake | Online Cake Delivery Bangalore Fresh Cakes',
+      description: 'Order fresh cakes online from Carlos Cake Bakery in Bangalore. Get delicious designer cakes, birthday cakes with fast home delivery across Bangalore today'
+    },
+    '/about': {
+      title: 'About Us | Carlos Cake Cafe',
+      description: 'Learn more about Carlos Cake Cafe - our journey, our baking standards, and our commitment to sweetening your celebrations.'
+    },
+    '/contact': {
+      title: 'Contact Us | Carlos Cake Cafe',
+      description: 'Get in touch with Carlos Cake Cafe for support, custom cake enquiries, or locations in Bangalore.'
+    },
+    '/all-products': {
+      title: 'Our Full Cake Menu | Carlos Cake Cafe',
+      description: 'Explore our extensive range of freshly baked cakes, cupcakes, and custom desserts available for fast online delivery in Bangalore.'
+    },
+    '/cart': {
+      title: 'Your Cart | Carlos Cake Cafe',
+      description: 'Review your selected cakes and proceed to secure checkout for doorstep delivery.'
+    },
+    '/wishlist': {
+      title: 'Your Wishlist | Carlos Cake Cafe',
+      description: 'View your favorite cakes and move them to cart for ordering.'
+    },
+    '/menu': {
+      title: 'Explore Cake Menu | Carlos Cake Cafe',
+      description: 'Browse the sweet catalog at Carlos Cake Cafe.'
+    },
+    '/gallery': {
+      title: 'Gallery | Carlos Cake Cafe',
+      description: 'Beautiful snaps of our handcrafted cakes and special event creations.'
+    }
+  };
+
+  const activeSEO = staticSEO[location.pathname];
+  useSEO({
+    title: activeSEO?.title,
+    description: activeSEO?.description
+  });
+
+  const [cart, setCart] = useState(() => {
+    const loaded = loadFromLocalStorage('cart', []);
+    return loaded.map(item => {
+      if (!item.selectedWeight) {
+        return {
+          ...item,
+          selectedWeight: {
+            weight: "1",
+            label: "1 kg",
+            price: item.price,
+            offerPrice: item.offerPrice || null,
+            serves: "4-6 people"
+          }
+        };
+      }
+      return item;
+    });
+  });
   const [wishlist, setWishlist] = useState(() => loadFromLocalStorage('wishlist', []));
   const [isLoggedIn, setIsLoggedIn] = useState(() => loadFromLocalStorage('isLoggedIn', false));
   const [user, setUser] = useState(() => loadFromLocalStorage('user', null));
@@ -139,7 +200,17 @@ function AppContent() {
         return prevCart;
       }
       showCartNotification(`🎂 ${product.name} added to cart!`);
-      return [...prevCart, { ...product, quantity: 1 }];
+      const cartProduct = { ...product };
+      if (!cartProduct.selectedWeight) {
+        cartProduct.selectedWeight = {
+          weight: "1",
+          label: "1 kg",
+          price: product.price,
+          offerPrice: product.offerPrice || null,
+          serves: "4-6 people"
+        };
+      }
+      return [...prevCart, { ...cartProduct, quantity: 1 }];
     });
   };
 
@@ -258,6 +329,7 @@ function AppContent() {
             <CelebrationSection />
             <BranchesSection />
             <ReviewsSection />
+            <HomeSEOContent />
           </div>
         } />
 
@@ -267,6 +339,39 @@ function AppContent() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/category/:categoryName" element={
           <CategoryPage
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+            onAddToWishlist={handleAddToWishlist}
+            wishlist={wishlist}
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+          />
+        } />
+        <Route path="/fresh-cream-cakes-carlos-cake-fast-online-delivery" element={
+          <CategoryPage
+            categoryNameOverride="fresh-cream-cakes"
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+            onAddToWishlist={handleAddToWishlist}
+            wishlist={wishlist}
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+          />
+        } />
+        <Route path="/designer-cakes-selection-carlos-cake-quick-delivery" element={
+          <CategoryPage
+            categoryNameOverride="designer-cakes"
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+            onAddToWishlist={handleAddToWishlist}
+            wishlist={wishlist}
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+          />
+        } />
+        <Route path="/orderchocolate-cakes-online-bangalore-carlos-cake" element={
+          <CategoryPage
+            categoryNameOverride="chocolate-cakes"
             onProductClick={handleProductClick}
             onAddToCart={handleAddToCart}
             onAddToWishlist={handleAddToWishlist}

@@ -3,13 +3,29 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProducts, getCategories } from '../firebase';
 import ProductCard from './ProductCard';
+import { useSEO } from '../hooks/useSEO';
+import { CategorySEOData } from './CategorySEOData';
+import FAQAccordion from './FAQAccordion';
 
-const CategoryPage = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist, cart, isLoggedIn }) => {
-  const { categoryName } = useParams();
+const CategoryPage = ({ categoryNameOverride, onProductClick, onAddToCart, onAddToWishlist, wishlist, cart, isLoggedIn }) => {
+  const { categoryName: paramCategoryName } = useParams();
+  const categoryName = categoryNameOverride || paramCategoryName;
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Normalize category name for SEO matching
+  const seoKey = categoryName?.toLowerCase()
+    .replace(/\s+/g, '-')
+    // Strip trailing or helper parts of custom routes to find the base key
+    .replace('-selection-carlos-cake-quick-delivery', '')
+    .replace('-carlos-cake-fast-online-delivery', '')
+    .replace('orderchocolate-cakes-online-bangalore-', '')
+    .replace('design-cakes', 'designer-cakes')
+    .replace('choclate-cakes', 'chocolate-cakes'); // handle spelling variants
+
+  const seoInfo = CategorySEOData[seoKey];
 
   useEffect(() => {
     if (categoryName) {
@@ -21,40 +37,66 @@ const CategoryPage = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist, 
   const fetchCategoryAndProducts = async () => {
     setLoading(true);
     
-    // Decode the category name from URL
-    const decodedName = decodeURIComponent(categoryName).replace(/-/g, ' ');
-    
+    // Normalize URL category name parameter
+    const cleanKey = categoryName?.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace('-selection-carlos-cake-quick-delivery', '')
+      .replace('-carlos-cake-fast-online-delivery', '')
+      .replace('orderchocolate-cakes-online-bangalore-', '')
+      .replace('design-cakes', 'designer-cakes')
+      .replace('choclate-cakes', 'chocolate-cakes');
+
     // Get all categories to find matching one
     const allCategories = await getCategories();
     
-    // Find category by matching name (case insensitive)
-    const matchedCategory = allCategories.find(
-      cat => cat.name?.toLowerCase() === decodedName.toLowerCase() ||
-              cat.name?.toLowerCase().replace(/\s+/g, '-') === categoryName.toLowerCase()
-    );
+    // Find category by matching name (case insensitive with spelling variations)
+    const matchedCategory = allCategories.find(cat => {
+      const catName = cat.name?.toLowerCase().replace(/\s+/g, '-');
+      if (!catName) return false;
+      
+      if (catName === cleanKey) return true;
+      if (cleanKey === 'chocolate-cakes' && (catName === 'choclate-cakes' || catName === 'chocolate-cakes')) return true;
+      if (cleanKey === 'designer-cakes' && (catName === 'design-cakes' || catName === 'designer-cakes')) return true;
+      
+      return catName.includes(cleanKey) || cleanKey.includes(catName);
+    });
     
     setCategory(matchedCategory);
     
+    const allProducts = await getProducts();
+    let categoryProducts = [];
+
     if (matchedCategory) {
-      // Get products for this category
-      const allProducts = await getProducts();
-      const categoryProducts = allProducts.filter(
-        product => product.categoryId === matchedCategory.id ||
-                   product.category?.toLowerCase() === matchedCategory.name?.toLowerCase() ||
-                   product.categoryName?.toLowerCase() === matchedCategory.name?.toLowerCase()
-      );
-      setProducts(categoryProducts);
+      // Get products for this category using ID or spelling variants
+      categoryProducts = allProducts.filter(product => {
+        if (product.categoryId === matchedCategory.id) return true;
+        
+        const prodCatName = (product.categoryName || product.category || '').toLowerCase();
+        
+        if (cleanKey === 'chocolate-cakes' && (prodCatName.includes('choclate') || prodCatName.includes('chocolate'))) return true;
+        if (cleanKey === 'designer-cakes' && (prodCatName.includes('design') || prodCatName.includes('designer'))) return true;
+        if (cleanKey === 'fresh-cream-cakes' && prodCatName.includes('fresh cream')) return true;
+
+        return prodCatName.includes(matchedCategory.name?.toLowerCase()) || 
+               matchedCategory.name?.toLowerCase().includes(prodCatName);
+      });
     } else {
-      // Fallback: try to filter by name
-      const allProducts = await getProducts();
-      const filteredProducts = allProducts.filter(
-        product => product.category?.toLowerCase().includes(decodedName.toLowerCase()) ||
-                   product.categoryName?.toLowerCase().includes(decodedName.toLowerCase()) ||
-                   (product.tags && product.tags.some(tag => tag.toLowerCase().includes(decodedName.toLowerCase())))
-      );
-      setProducts(filteredProducts);
+      // Fallback: try to filter by cleanKey spelling variations directly
+      categoryProducts = allProducts.filter(product => {
+        const prodCatName = (product.categoryName || product.category || '').toLowerCase();
+        const prodTags = (product.tags || []).map(t => t.toLowerCase());
+
+        const hasMatch = (term) => prodCatName.includes(term) || prodTags.some(t => t.includes(term));
+
+        if (cleanKey === 'chocolate-cakes') return hasMatch('choclate') || hasMatch('chocolate');
+        if (cleanKey === 'designer-cakes') return hasMatch('design') || hasMatch('designer');
+        if (cleanKey === 'fresh-cream-cakes') return hasMatch('fresh cream') || hasMatch('fresh-cream');
+
+        return false;
+      });
     }
     
+    setProducts(categoryProducts);
     setLoading(false);
   };
 
@@ -81,6 +123,20 @@ const CategoryPage = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist, 
     return `Discover our amazing collection of ${name} cakes, freshly baked with premium ingredients`;
   };
 
+  const displayName = category?.name || (
+    categoryNameOverride 
+      ? categoryNameOverride.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      : decodeURIComponent(categoryName).replace(/-/g, ' ')
+  );
+  
+  const description = getCategoryDescription(displayName);
+
+  // Dynamically set metadata using useSEO hook
+  useSEO({
+    title: seoInfo ? seoInfo.seoTitle : `${displayName} | Carlos Cake`,
+    description: seoInfo ? seoInfo.seoDescription : `Order delicious ${displayName} cakes online from Carlos Cake Bakery. Fast home delivery across Bangalore today.`
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white pt-32 pb-24 flex justify-center items-center">
@@ -88,9 +144,6 @@ const CategoryPage = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist, 
       </div>
     );
   }
-
-  const displayName = category?.name || decodeURIComponent(categoryName).replace(/-/g, ' ');
-  const description = getCategoryDescription(displayName);
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-24">
@@ -162,10 +215,101 @@ const CategoryPage = ({ onProductClick, onAddToCart, onAddToWishlist, wishlist, 
           </div>
         )}
 
-       
+        {/* Rich SEO Copywriting Footer Section */}
+        {seoInfo && (
+          <div className="mt-24 pt-16 border-t border-gray-100 max-w-4xl mx-auto space-y-16">
+            
+            {/* About Category */}
+            <div>
+              <h2 className="text-2xl md:text-3xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight mb-6">
+                {seoInfo.aboutHeader}
+              </h2>
+              <div className="space-y-4 text-gray-600 text-sm md:text-base leading-relaxed font-semibold">
+                {seoInfo.aboutText.map((p, idx) => (
+                  <p key={idx}>{p}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* Flavours Section */}
+            <div>
+              <h2 className="text-2xl md:text-3xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight mb-8">
+                {seoInfo.flavoursHeader}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {seoInfo.flavours.map((flavour, idx) => (
+                  <div key={idx} className="bg-white border border-gray-100 p-6 md:p-8 rounded-[2rem] shadow-sm hover:shadow-xl hover:border-pink-200 transition-all duration-300 group">
+                    <h3 className="text-lg font-['Outfit'] font-black text-gray-900 uppercase tracking-wider mb-3 group-hover:text-pink-600 transition-colors">
+                      {flavour.name}
+                    </h3>
+                    <p className="text-gray-500 text-xs md:text-sm font-medium leading-relaxed mb-6">
+                      {flavour.desc}
+                    </p>
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-black uppercase text-gray-700 tracking-wider">Highlights:</h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500 font-semibold">
+                        {flavour.highlights.map((h, hIdx) => (
+                          <li key={hIdx} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Why Choose Us */}
+            <div className="bg-pink-50/30 rounded-[2.5rem] p-8 md:p-12 border border-pink-100/50">
+              <h2 className="text-2xl md:text-3xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight mb-8">
+                {seoInfo.whyChooseHeader}
+              </h2>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {seoInfo.whyChoose.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3.5 text-xs md:text-sm text-gray-700 font-bold leading-normal">
+                    <span className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* FAQs Section */}
+            <div>
+              <h2 className="text-2xl md:text-3xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tight text-center mb-8">
+                Frequently Asked Questions
+              </h2>
+              <FAQAccordion faqs={seoInfo.faqs} />
+            </div>
+
+            {/* CTA Section */}
+            <div className="bg-gradient-to-r from-rose-gold to-[#E11D48] text-white p-8 md:p-16 rounded-[2.5rem] text-center shadow-xl relative overflow-hidden group border border-white/5">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
+              <h3 className="text-2xl md:text-4xl font-['Outfit'] font-black uppercase tracking-tight mb-4">
+                {seoInfo.ctaHeader}
+              </h3>
+              <p className="text-white/90 text-sm md:text-base font-semibold mb-8 max-w-xl mx-auto">
+                {seoInfo.ctaSub}
+              </p>
+              <button 
+                onClick={() => navigate('/')} 
+                className="bg-white text-pink-600 px-10 py-3.5 rounded-full font-black uppercase tracking-widest text-xs shadow-md hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer btn-premium"
+              >
+                {seoInfo.ctaButton}
+              </button>
+            </div>
+
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default CategoryPage;
+export default CategoryPage;
