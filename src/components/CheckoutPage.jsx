@@ -73,6 +73,9 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                 addons: selectedAddons || [],
                 cakeMessage: cakeMessage || '',
                 occasion: occasion || '',
+                isEggless: buyNowProduct.isEggless || false,
+                egglessOption: buyNowProduct.egglessOption || false,
+                egglessExtra: buyNowProduct.egglessExtra || 0,
                 selectedWeight: buyNowProduct.selectedWeight || {
                     weight: "1",
                     label: "1 kg",
@@ -98,6 +101,9 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             addons: item.addons || [],
             cakeMessage: item.cakeMessage || '',
             occasion: item.occasion || '',
+            isEggless: item.isEggless || false,
+            egglessOption: item.egglessOption || false,
+            egglessExtra: item.egglessExtra || 0,
             selectedWeight: item.selectedWeight || {
                 weight: "1",
                 label: "1 kg",
@@ -110,11 +116,26 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
     const checkoutItems = getCheckoutItems();
 
+    const getItemPrice = (item) => {
+        let basePrice = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
+        if (item.isEggless && item.egglessOption && item.egglessExtra) {
+            basePrice += parseFloat(item.egglessExtra);
+        }
+        return basePrice;
+    };
+
+    const getItemOriginalPrice = (item) => {
+        let basePrice = item.selectedWeight?.price || item.price || 0;
+        if (item.isEggless && item.egglessOption && item.egglessExtra) {
+            basePrice += parseFloat(item.egglessExtra);
+        }
+        return basePrice;
+    };
+
     // Calculate PRODUCT TOTAL and ADD-ONS TOTAL separately with offer support
     const calculateProductTotal = () => {
         return checkoutItems.reduce((sum, item) => {
-            // Use offer price if available, otherwise regular price
-            const price = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
+            const price = getItemPrice(item);
             const quantity = item.quantity || 1;
             return sum + (price * quantity);
         }, 0);
@@ -133,7 +154,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
     // Calculate subtotal safely with offer support
     const calculateSubtotal = () => {
         return checkoutItems.reduce((sum, item) => {
-            const price = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
+            const price = getItemPrice(item);
             const quantity = item.quantity || 1;
             const itemTotal = price * quantity;
             const addonsTotalItem = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);
@@ -415,7 +436,8 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                 const cleanItem = {
                     id: item.id || null,
                     name: item.name || '',
-                    price: item.price || 0,
+                    price: getItemPrice(item),
+                    isEggless: item.isEggless || false,
                     quantity: item.quantity || 1,
                     image: item.image || '/placeholder.png',
                     addons: (item.addons || []).map(addon => ({
@@ -440,8 +462,6 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                         offerPrice: item.selectedWeight.offerPrice || null,
                         serves: item.selectedWeight.serves || ''
                     };
-                    // Use offer price if available
-                    cleanItem.price = item.selectedWeight.offerPrice || item.selectedWeight.price || item.price || 0;
                 }
 
                 return cleanItem;
@@ -614,13 +634,14 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
         let itemsText = '';
         checkoutItems.forEach((item, idx) => {
-            const actualPrice = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
+            const actualPrice = getItemPrice(item);
             const quantity = item.quantity || 1;
-            itemsText += `${idx + 1}. ${item.name} x${quantity} - ₹${actualPrice * quantity}\n`;
+            const egglessText = item.egglessOption ? (item.isEggless ? ' [Eggless]' : ' [With Egg]') : '';
+            itemsText += `${idx + 1}. ${item.name}${egglessText} x${quantity} - ₹${actualPrice * quantity}\n`;
 
             // Show offer savings if applicable
             if (item.hasOffer && item.offerDiscount) {
-                const originalPrice = item.selectedWeight?.price || item.price || 0;
+                const originalPrice = getItemOriginalPrice(item);
                 if (originalPrice > actualPrice) {
                     itemsText += `    Offer: ${item.offerDiscount} (Save ₹${(originalPrice - actualPrice) * quantity})\n`;
                 }
@@ -675,12 +696,18 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                             </div>
                         )}
 
-                        <div className="mt-1">
+                        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                                 <span>⚖️</span>
                                 <span>{item.selectedWeight?.label || '1 kg'}</span>
                                 <span>(Serves: {item.selectedWeight?.serves || '4-6 people'})</span>
                             </span>
+                            {item.isEggless && (
+                                <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-semibold">
+                                    <span>🌱</span>
+                                    <span>Eggless</span>
+                                </span>
+                            )}
                         </div>
 
                         {item.occasion && (
@@ -755,11 +782,17 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                             <h4 className="font-bold text-gray-900">{item.name || 'Product'}</h4>
                             <p className="text-gray-500 text-sm">Quantity: {quantity}</p>
 
-                            <div className="mt-1">
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                                 <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                                     <span>⚖️</span>
                                     <span>{item.selectedWeight?.label || '1 kg'}</span>
                                 </span>
+                                {item.isEggless && (
+                                    <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-semibold">
+                                        <span>🌱</span>
+                                        <span>Eggless</span>
+                                    </span>
+                                )}
                             </div>
 
                             {item.occasion && (

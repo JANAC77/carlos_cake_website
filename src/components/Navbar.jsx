@@ -21,6 +21,7 @@ const Navbar = ({
   const [currentMessage, setCurrentMessage] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isBlogsOpen, setIsBlogsOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -65,10 +66,13 @@ const Navbar = ({
       if (isCategoriesOpen && !event.target.closest('.categories-dropdown')) {
         setIsCategoriesOpen(false);
       }
+      if (isBlogsOpen && !event.target.closest('.blogs-dropdown')) {
+        setIsBlogsOpen(false);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [isDropdownOpen, isCategoriesOpen]);
+  }, [isDropdownOpen, isCategoriesOpen, isBlogsOpen]);
 
   // Toggle functions
   const toggleCategoriesDropdown = () => {
@@ -180,6 +184,49 @@ const Navbar = ({
                           </Link>
                         ))
                       )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Blogs Dropdown - Click-based */}
+              <div className="relative blogs-dropdown">
+                <button
+                  onClick={() => setIsBlogsOpen(!isBlogsOpen)}
+                  className="relative text-[11px] font-serif font-bold text-white/90 hover:text-rose-gold uppercase tracking-[0.25em] transition-colors duration-300 group whitespace-nowrap flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Blogs</span>
+                  <svg
+                    className={`w-3 h-3 transition-transform duration-300 ${isBlogsOpen ? 'rotate-180 text-rose-gold' : 'text-white/60'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <span className="absolute -bottom-2 left-1/2 w-0 h-[1.5px] bg-gradient-to-r from-rose-gold to-champagne-gold transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isBlogsOpen && (
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-64 glass-panel-dark border border-white/10 rounded-2xl shadow-2xl z-50 animate-slide-down">
+                    <div className="py-2 px-1">
+                      <Link
+                        to="/bangalore-best-same-day-cake-delivery-online"
+                        onClick={() => setIsBlogsOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 group"
+                      >
+                        <span className="text-xs font-semibold uppercase tracking-wider">Same-Day Delivery Guide</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-gold/0 group-hover:bg-rose-gold transition-all duration-350"></span>
+                      </Link>
+                      <Link
+                        to="/best-chocolate-cake-online-bengaluru-same-day-delivery"
+                        onClick={() => setIsBlogsOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 group"
+                      >
+                        <span className="text-xs font-semibold uppercase tracking-wider">Best Chocolate Cakes</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-gold/0 group-hover:bg-rose-gold transition-all duration-350"></span>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -375,6 +422,27 @@ const Navbar = ({
                     </Link>
                   ))
                 )}
+              </div>
+            </div>
+
+            {/* Mobile Blogs */}
+            <div className="pt-4 border-t border-white/5">
+              <p className="text-rose-gold text-[10px] font-black uppercase tracking-[0.2em] mb-4">Blogs</p>
+              <div className="space-y-3">
+                <Link
+                  to="/bangalore-best-same-day-cake-delivery-online"
+                  className="block w-full text-white/70 hover:text-rose-gold transition-colors py-1 text-xs font-semibold uppercase tracking-wider"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Same-Day Delivery Guide
+                </Link>
+                <Link
+                  to="/best-chocolate-cake-online-bengaluru-same-day-delivery"
+                  className="block w-full text-white/70 hover:text-rose-gold transition-colors py-1 text-xs font-semibold uppercase tracking-wider"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Best Chocolate Cakes
+                </Link>
               </div>
             </div>
 

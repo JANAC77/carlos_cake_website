@@ -1,7 +1,7 @@
 // src/components/ProductDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductById, getProducts, getCakeWeights } from '../firebase';
+import { getProductById, getProducts } from '../firebase';
 import ProductCard from './ProductCard';
 import Reviews from './Reviews';
 import CustomCakeOrder from './CustomCakeOrder';
@@ -17,8 +17,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
 
   const [selectedWeight, setSelectedWeight] = useState(null);
   const [weightOptions, setWeightOptions] = useState([]);
-  const [showWeightSelector, setShowWeightSelector] = useState(false);
   const [loadingWeights, setLoadingWeights] = useState(true);
+  const [isEggless, setIsEggless] = useState(false);
 
   useEffect(() => {
     console.log('ProductDetails mounted, isLoggedIn:', isLoggedIn);
@@ -50,6 +50,16 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [id]);
 
+  useEffect(() => {
+    const limit = (selectedWeight && selectedWeight.stock !== undefined && selectedWeight.stock !== null)
+      ? Number(selectedWeight.stock)
+      : (product?.stock !== undefined && product?.stock !== null ? Number(product.stock) : (product?.quantity !== undefined && product?.quantity !== null ? Number(product.quantity) : 99));
+
+    if (quantity > limit) {
+      setQuantity(Math.max(1, limit));
+    }
+  }, [selectedWeight, product, quantity]);
+
   const fetchProductDetails = async () => {
     setLoading(true);
     const productData = await getProductById(id);
@@ -67,26 +77,18 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   const loadWeights = async (productData) => {
     setLoadingWeights(true);
     try {
-      let weights = await getCakeWeights();
-
-      console.log('Weights from Firebase:', weights);
-
-      if (!weights || weights.length === 0) {
-        console.log("No weights in Firebase, using fallback weights");
-        weights = [
-          { id: 'fb_1', weight: "0.5", weightLabel: "0.5 kg", priceMultiplier: 0.6, serves: "2-4 people" },
-          { id: 'fb_2', weight: "1", weightLabel: "1 kg", priceMultiplier: 1, serves: "4-6 people" },
-          { id: 'fb_3', weight: "1.5", weightLabel: "1.5 kg", priceMultiplier: 1.4, serves: "6-8 people" },
-          { id: 'fb_4', weight: "2", weightLabel: "2 kg", priceMultiplier: 1.8, serves: "8-12 people" }
-        ];
+      let weights = [];
+      if (productData.weightOptions && productData.weightOptions.length > 0) {
+        console.log('Using product-specific custom weights:', productData.weightOptions);
+        weights = productData.weightOptions;
       }
 
       if (weights && weights.length > 0) {
         // Calculate offer price for each weight if product has offer
         const options = weights.map(w => {
-          let weightPrice = Math.round(productData.price * (w.priceMultiplier || 1));
+          let weightPrice = w.price !== undefined ? parseFloat(w.price) : Math.round(productData.price * (w.priceMultiplier || 1));
           let weightOfferPrice = null;
-          
+
           if (productData.hasOffer && productData.offerPrice) {
             if (productData.offerType === 'percentage') {
               const discountPercent = parseFloat(productData.offerDiscount);
@@ -96,13 +98,14 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
               weightOfferPrice = Math.round(weightPrice - discountAmount);
             }
           }
-          
+
           return {
-            id: w.id,
+            id: w.id || `opt_${Math.random().toString(36).substr(2, 9)}`,
             weight: w.weight,
-            label: w.weightLabel || `${w.weight} kg`,
+            label: w.weightLabel || w.label || `${w.weight} kg`,
             price: weightPrice,
             offerPrice: weightOfferPrice,
+            stock: w.stock !== undefined && w.stock !== null && w.stock !== '' ? Number(w.stock) : null,
             serves: w.serves || `${Math.round(parseFloat(w.weight) * 4)}-${Math.round(parseFloat(w.weight) * 6)} people`,
           };
         });
@@ -110,7 +113,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
         console.log('Generated weight options:', options);
         setWeightOptions(options);
 
-        const defaultWeight = options.find(w => w.weight === '1') || options[0];
+        const defaultWeight = options.find(w => w.weight === '0.5') || options.find(w => w.weight === '1') || options[0];
         setSelectedWeight(defaultWeight || null);
       } else {
         setWeightOptions([]);
@@ -126,19 +129,33 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   };
 
   const getDisplayPrice = () => {
+    let basePrice = 0;
     if (selectedWeight) {
       // Return offer price if available, otherwise regular price
-      return selectedWeight.offerPrice || selectedWeight.price;
+      basePrice = selectedWeight.offerPrice || selectedWeight.price;
+    } else {
+      // Return product offer price if available
+      basePrice = product?.offerPrice || product?.price || 0;
     }
-    // Return product offer price if available
-    return product?.offerPrice || product?.price || 0;
+
+    if (isEggless && product?.egglessOption) {
+      basePrice += parseFloat(product.egglessExtra || 0);
+    }
+    return basePrice;
   };
 
   const getOriginalPrice = () => {
+    let basePrice = 0;
     if (selectedWeight) {
-      return selectedWeight.price;
+      basePrice = selectedWeight.price;
+    } else {
+      basePrice = product?.price || 0;
     }
-    return product?.price || 0;
+
+    if (isEggless && product?.egglessOption) {
+      basePrice += parseFloat(product.egglessExtra || 0);
+    }
+    return basePrice;
   };
 
   const handleAddToCart = () => {
@@ -150,27 +167,30 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
       alert('Please select cake weight');
       return;
     }
-    if (requireLogin('addToCart', { ...product, quantity, selectedWeight, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
+    if (requireLogin('addToCart', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
       const itemToAdd = weightOptions.length > 0
-        ? { 
-            ...product, 
-            quantity, 
-            selectedWeight, 
-            price: getDisplayPrice(),
-            originalPrice: getOriginalPrice(),
-            hasOffer: product?.hasOffer,
-            offerDiscount: product?.offerDiscount,
-            offerDescription: product?.offerDescription
-          }
-        : { 
-            ...product, 
-            quantity,
-            price: getDisplayPrice(),
-            originalPrice: getOriginalPrice()
-          };
+        ? {
+          ...product,
+          quantity,
+          selectedWeight,
+          isEggless: product.egglessOption ? isEggless : false,
+          price: getDisplayPrice(),
+          originalPrice: getOriginalPrice(),
+          hasOffer: product?.hasOffer,
+          offerDiscount: product?.offerDiscount,
+          offerDescription: product?.offerDescription
+        }
+        : {
+          ...product,
+          quantity,
+          isEggless: product.egglessOption ? isEggless : false,
+          price: getDisplayPrice(),
+          originalPrice: getOriginalPrice()
+        };
       onAddToCart(itemToAdd);
       const weightText = selectedWeight ? ` (${selectedWeight.label})` : '';
-      alert(`${product.name}${weightText} added to cart!`);
+      const typeText = product.egglessOption ? ` (${isEggless ? 'Eggless' : 'With Egg'})` : '';
+      alert(`${product.name}${weightText}${typeText} added to cart!`);
     }
   };
 
@@ -179,7 +199,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
       alert('Please select cake weight');
       return;
     }
-    if (requireLogin('buyNow', { ...product, quantity, selectedWeight, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
+    if (requireLogin('buyNow', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
       navigate('/checkout', {
         state: {
           product: {
@@ -190,6 +210,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             image: product.image,
             description: product.description,
             selectedWeight: selectedWeight || null,
+            isEggless: product.egglessOption ? isEggless : false,
             hasOffer: product?.hasOffer,
             offerDiscount: product?.offerDiscount,
             offerDescription: product?.offerDescription
@@ -204,6 +225,21 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   const handleAddToWishlist = () => {
     if (requireLogin('addToWishlist', product)) {
       onAddToWishlist(product);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description || '',
+        url: window.location.href,
+      })
+        .then(() => console.log('Successful share'))
+        .catch((error) => console.log('Error sharing', error));
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Product link copied to clipboard!');
     }
   };
 
@@ -250,7 +286,15 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   const averageRating = product.averageRating || 0;
   const ratingCount = product.ratingCount || 0;
   const offerActive = isOfferValid();
-  const stockLimit = product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99);
+
+  const getStockLimit = () => {
+    if (selectedWeight && selectedWeight.stock !== undefined && selectedWeight.stock !== null) {
+      return Number(selectedWeight.stock);
+    }
+    return product.stock !== undefined && product.stock !== null ? Number(product.stock) : (product.quantity !== undefined && product.quantity !== null ? Number(product.quantity) : 99);
+  };
+
+  const stockLimit = getStockLimit();
   const isOutOfStock = stockLimit <= 0;
 
   return (
@@ -272,7 +316,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             {offerActive && product.offerDiscount && (
               <div className="absolute top-4 left-4 z-10">
                 <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg animate-pulse">
-                   {product.offerDiscount}
+                  {product.offerDiscount}
                 </div>
               </div>
             )}
@@ -315,9 +359,6 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
               <span className="text-sm text-gray-500">({ratingCount} reviews)</span>
             </div>
 
-            <p className="text-gray-600 leading-relaxed mb-6">
-              {product.description || 'Delicious cake freshly baked with premium ingredients. Perfect for any celebration.'}
-            </p>
 
             {/* OFFER DISPLAY SECTION */}
             {offerActive && product.offerDiscount && (
@@ -340,26 +381,24 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
 
             <div className="border-t border-b border-gray-100 py-4 mb-6">
               <div className="flex items-center justify-between">
-                {selectedWeight ? (
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl font-bold text-pink-600">₹{getDisplayPrice()}</span>
-                      {getDisplayPrice() !== getOriginalPrice() && (
-                        <span className="text-gray-400 line-through text-lg">₹{getOriginalPrice()}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">Base price for 1kg</p>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl font-bold text-pink-600">₹{getDisplayPrice() * quantity}</span>
+                    {getDisplayPrice() !== getOriginalPrice() && (
+                      <span className="text-gray-400 line-through text-lg">₹{getOriginalPrice() * quantity}</span>
+                    )}
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl font-bold text-pink-600">₹{getDisplayPrice()}</span>
-                      {product.offerPrice && (
-                        <span className="text-gray-400 line-through text-lg">₹{product.price}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  {quantity > 1 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      ₹{getDisplayPrice()} x {quantity} unit{quantity > 1 ? 's' : ''}
+                    </p>
+                  )}
+                  {selectedWeight && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Base price for {selectedWeight.label}: ₹{getDisplayPrice()}
+                    </p>
+                  )}
+                </div>
                 {offerActive && (
                   <div className="bg-green-100 text-green-600 text-xs font-bold px-3 py-1 rounded-full">
                     Save {product.offerType === 'percentage' ? product.offerDiscount : `₹${product.offerDiscount}`}
@@ -367,71 +406,58 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                 )}
               </div>
             </div>
-            
+
             {/* WEIGHT SELECTOR */}
             {!loadingWeights && weightOptions.length > 0 && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Select Cake Weight</label>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowWeightSelector(!showWeightSelector)}
-                    className="w-full flex justify-between items-center px-4 py-3 border border-gray-200 rounded-xl bg-white hover:border-pink-500 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">⚖️</span>
-                      <div className="text-left">
-                        <span className="font-medium text-gray-900">{selectedWeight?.label || 'Select Weight'}</span>
-                        <p className="text-xs text-gray-400">{selectedWeight?.serves || 'Choose size'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        {selectedWeight?.offerPrice && selectedWeight?.offerPrice !== selectedWeight?.price ? (
-                          <>
-                            <span className="font-bold text-pink-600">₹{selectedWeight.offerPrice}</span>
-                            <span className="text-xs text-gray-400 line-through ml-1">₹{selectedWeight.price}</span>
-                          </>
-                        ) : (
-                          <span className="font-bold text-pink-600">₹{selectedWeight?.price || 0}</span>
-                        )}
-                      </div>
-                      <svg className={`w-4 h-4 transition-transform ${showWeightSelector ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </button>
-
-                  {showWeightSelector && (
-                    <div className="absolute z-20 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                      {weightOptions.map((weight) => (
-                        <button
-                          key={weight.id}
-                          onClick={() => {
-                            setSelectedWeight(weight);
-                            setShowWeightSelector(false);
-                          }}
-                          className={`w-full flex justify-between items-center p-3 hover:bg-pink-50 transition-colors ${selectedWeight?.id === weight.id ? 'bg-pink-50' : ''}`}
-                        >
-                          <div>
-                            <span className="font-medium text-gray-900">{weight.label}</span>
-                            <p className="text-xs text-gray-400">{weight.serves}</p>
-                          </div>
-                          <div className="text-right">
-                            {weight.offerPrice && weight.offerPrice !== weight.price ? (
-                              <>
-                                <span className="font-bold text-pink-600">₹{weight.offerPrice}</span>
-                                <span className="text-xs text-gray-400 line-through ml-1">₹{weight.price}</span>
-                              </>
-                            ) : (
-                              <span className="font-bold text-pink-600">₹{weight.price}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {weightOptions.map((weight) => {
+                    const isSelected = selectedWeight?.id === weight.id;
+                    const isOptOutOfStock = weight.stock !== undefined && weight.stock !== null && Number(weight.stock) <= 0;
+                    return (
+                      <button
+                        key={weight.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedWeight(weight);
+                          const limit = weight.stock !== undefined && weight.stock !== null ? Number(weight.stock) : 99;
+                          if (quantity > limit) {
+                            setQuantity(Math.max(1, limit));
+                          }
+                        }}
+                        className={`relative flex flex-col justify-center p-3.5 pr-8 rounded-xl border text-left transition-all duration-300 cursor-pointer ${isSelected
+                          ? 'border-pink-500 bg-pink-50/50 shadow-sm ring-1 ring-pink-500'
+                          : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/10'
+                          }`}
+                      >
+                        {/* Selected Indicator Badge (Checkbox style) */}
+                        <div className="absolute top-2.5 right-2.5 flex items-center justify-center">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected
+                            ? 'border-pink-600 bg-pink-600 text-white'
+                            : 'border-gray-300 bg-white'
+                            }`}>
+                            {isSelected && (
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
                             )}
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-gray-900 text-sm">{weight.label}</span>
+                            {isOptOutOfStock && (
+                              <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100 uppercase tracking-wider">Out of Stock</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{weight.serves}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-gray-400 mt-2">💡 Larger cakes serve more people. Price varies by weight.</p>
               </div>
             )}
 
@@ -440,10 +466,32 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-pink-500 border-t-transparent"></div>
               </div>
             )}
-
-            {!loadingWeights && weightOptions.length === 0 && (
-              <div className="mb-6 p-3 bg-yellow-50 rounded-xl text-center">
-                <p className="text-xs text-yellow-600">⚖️ Weight options loading... Please refresh</p>
+            {/* EGG / EGGLESS SELECTOR */}
+            {product?.egglessOption && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Dietary Preference</label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEggless(false)}
+                    className={`flex-1 py-3 px-4 rounded-xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-xs cursor-pointer ${!isEggless
+                      ? 'border-pink-500 bg-pink-50/50 text-pink-600 shadow-sm ring-1 ring-pink-500'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-pink-300 hover:bg-pink-50/10'
+                      }`}
+                  >
+                    🥚 With Egg
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEggless(true)}
+                    className={`flex-1 py-3 px-4 rounded-xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-xs cursor-pointer ${isEggless
+                      ? 'border-pink-500 bg-pink-50/50 text-pink-600 shadow-sm ring-1 ring-pink-500'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-pink-300 hover:bg-pink-50/10'
+                      }`}
+                  >
+                    🌱 Eggless {product.egglessExtra > 0 ? `(+₹${product.egglessExtra})` : ''}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -475,12 +523,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                     +
                   </button>
                 </div>
-                {isOutOfStock ? (
+                {isOutOfStock && (
                   <p className="text-sm text-red-600 font-bold">❌ Out of Stock</p>
-                ) : (
-                  <p className="text-sm text-green-600 font-medium">
-                    {stockLimit <= 5 ? `⚠️ Only ${stockLimit} left in stock!` : `✓ In Stock (${stockLimit} available)`}
-                  </p>
                 )}
               </div>
             </div>
@@ -489,13 +533,12 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
               <button
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                  isOutOfStock
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : isInCart
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${isOutOfStock
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : isInCart
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                     : 'bg-gray-900 hover:bg-pink-600 text-white'
-                }`}
+                  }`}
               >
                 {isOutOfStock ? 'Out of Stock' : isInCart ? 'Go to Cart' : 'Add to Cart'}
               </button>
@@ -503,11 +546,10 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
               <button
                 onClick={handleBuyNow}
                 disabled={isOutOfStock}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
-                  isOutOfStock
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-pink-600 text-white hover:bg-gray-900'
-                }`}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${isOutOfStock
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-pink-600 text-white hover:bg-gray-900'
+                  }`}
               >
                 Buy Now
               </button>
@@ -526,26 +568,41 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             >
               <span>Request Custom Cake</span>
             </button>
+            <p className="text-gray-600 leading-relaxed mb-6">
+              {product.description || 'Delicious cake freshly baked with premium ingredients. Perfect for any celebration.'}
+            </p>
+            {/* Additional Product Info: Availability, Shelf Life, Disclaimer */}
+            <div className="mt-6 pt-6 border-t border-gray-100 space-y-6">
+              {product.availability && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Availability:</h3>
+                  <p className="text-sm text-gray-500 mt-1">{product.availability}</p>
+                </div>
+              )}
 
-            <div className="mt-2 p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center space-x-3 text-sm">
-                <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              {product.shelfLife && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Shelf Life:</h3>
+                  <p className="text-sm text-gray-500 mt-1">{product.shelfLife}</p>
+                </div>
+              )}
+
+              {product.disclaimer && (
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Disclaimer:</h3>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{product.disclaimer}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleShare}
+                className="flex items-center space-x-2 text-sm font-semibold text-gray-500 hover:text-pink-600 transition-colors pt-2 cursor-pointer group"
+              >
+                <svg className="w-5 h-5 text-gray-400 group-hover:text-pink-600 transition-colors" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l5.302-2.651m-5.302 4.837l5.302 2.651m-5.302-2.186a2.25 2.25 0 11-3.182-1.998 2.25 2.25 0 0 1 3.182 1.998zm1.096-3.37a2.25 2.25 0 1 1 3.181-1.998 2.25 2.25 0 0 1-3.181 1.998zm0 6.74a2.25 2.25 0 1 1 3.181 1.998 2.25 2.25 0 0 1-3.181-1.998z" />
                 </svg>
-                <span className="text-gray-600">Free delivery on orders above ₹500</span>
-              </div>
-              <div className="flex items-center space-x-3 text-sm mt-2">
-                <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-gray-600">Delivery within 2-3 hours</span>
-              </div>
-              <div className="flex items-center space-x-3 text-sm mt-2">
-                <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                <span className="text-gray-600">Cash on Delivery available</span>
-              </div>
+                <span>Share</span>
+              </button>
             </div>
           </div>
         </div>

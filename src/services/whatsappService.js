@@ -12,6 +12,10 @@ const WHATSAPP_API_URL = "https://api.whatsapp.com/send";
 export const generateProductOrderMessage = (product, quantity = 1, addons = [], cakeMessage = '', occasion = '', selectedWeight = null) => {
   let message = "🍰 *New Cake Order Request* 🍰\n\n";
   message += `*Item:* ${product.name}\n`;
+  if (product.egglessOption) {
+    const isEggless = product.isEggless || false;
+    message += `*Type:* ${isEggless ? '🌱 Eggless' : '🥚 With Egg'}\n`;
+  }
 
   const weight = selectedWeight || product.selectedWeight || {
     weight: "1",
@@ -61,6 +65,9 @@ export const generateCartOrderMessage = (cart, subtotal, deliveryCharge, total) 
     message += `   Total: ₹${itemTotal}\n`;
 
     message += `   Weight: ${item.selectedWeight?.label || '1 kg'}\n`;
+    if (item.egglessOption) {
+      message += `   Type: ${item.isEggless ? '🌱 Eggless' : '🥚 With Egg'}\n`;
+    }
 
     if (item.occasion) {
       message += `   Occasion: ${item.occasion}\n`;

@@ -37,6 +37,8 @@ import Gallery from './components/Gallery';
 import SmallBannerSlider from './components/SmallBannerSlider';
 import ReelsSection from './components/ReelsSection';
 import HomeSEOContent from './components/HomeSEOContent';
+import BlogSameDayDelivery from './components/BlogSameDayDelivery';
+import BlogChocolateCake from './components/BlogChocolateCake';
 import { useSEO } from './hooks/useSEO';
 
 const logo = '/carlos.png';
@@ -96,6 +98,14 @@ function AppContent() {
     '/gallery': {
       title: 'Gallery | Carlos Cake Cafe',
       description: 'Beautiful snaps of our handcrafted cakes and special event creations.'
+    },
+    '/bangalore-best-same-day-cake-delivery-online': {
+      title: 'Bangalore’s Best Same-Day Cake Delivery Online',
+      description: 'Order delicious cakes online in Bangalore with fast same-day delivery. Fresh flavors, custom designs, and doorstep delivery for every celebration'
+    },
+    '/best-chocolate-cake-online-bengaluru-same-day-delivery': {
+      title: 'Best Chocolate Cake Online in Bengaluru | Same-Day Delivery',
+      description: 'Order the best chocolate cake online in Bengaluru with same-day delivery. Fresh, rich, and delicious cakes for birthdays, parties, and celebrations!'
     }
   };
 
@@ -210,7 +220,7 @@ function AppContent() {
           serves: "4-6 people"
         };
       }
-      return [...prevCart, { ...cartProduct, quantity: 1 }];
+      return [...prevCart, { ...cartProduct, quantity: product.quantity || 1 }];
     });
   };
 
@@ -406,6 +416,8 @@ function AppContent() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-conditions" element={<TermsConditions />} />
         <Route path="/refund-policy" element={<RefundPolicy />} />
+        <Route path="/bangalore-best-same-day-cake-delivery-online" element={<BlogSameDayDelivery />} />
+        <Route path="/best-chocolate-cake-online-bengaluru-same-day-delivery" element={<BlogChocolateCake />} />
       </Routes>
 
       <Footer logo={logo} />

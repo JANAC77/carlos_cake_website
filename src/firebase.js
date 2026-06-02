@@ -408,15 +408,38 @@ export const createOrder = async (orderData) => {
                             const orderQty = Number(item.quantity) || 1;
                             const updates = { updatedAt: serverTimestamp() };
 
-                            if (productData.stock !== undefined && productData.stock !== null) {
-                                updates.stock = Math.max(0, Number(productData.stock) - orderQty);
-                            }
-                            if (productData.quantity !== undefined && productData.quantity !== null) {
-                                updates.quantity = Math.max(0, Number(productData.quantity) - orderQty);
-                            }
-                            // If neither is present, default to stock
-                            if (updates.stock === undefined && updates.quantity === undefined) {
-                                updates.stock = Math.max(0, 0 - orderQty);
+                            // Update weight options stock if weightOptions are present
+                            if (productData.weightOptions && Array.isArray(productData.weightOptions) && item.selectedWeight) {
+                                const updatedWeightOptions = productData.weightOptions.map(opt => {
+                                    if (String(opt.weight).trim() === String(item.selectedWeight.weight).trim()) {
+                                        const currentStock = opt.stock !== undefined && opt.stock !== null && opt.stock !== '' ? Number(opt.stock) : 0;
+                                        return {
+                                            ...opt,
+                                            stock: Math.max(0, currentStock - orderQty)
+                                        };
+                                    }
+                                    return opt;
+                                });
+                                updates.weightOptions = updatedWeightOptions;
+
+                                // Recalculate overall stock as the sum of all weight options' stocks
+                                const totalStock = updatedWeightOptions.reduce((sum, opt) => {
+                                    const optStock = opt.stock !== undefined && opt.stock !== null && opt.stock !== '' ? Number(opt.stock) : 0;
+                                    return sum + optStock;
+                                }, 0);
+                                updates.stock = totalStock;
+                                updates.quantity = totalStock;
+                            } else {
+                                if (productData.stock !== undefined && productData.stock !== null) {
+                                    updates.stock = Math.max(0, Number(productData.stock) - orderQty);
+                                }
+                                if (productData.quantity !== undefined && productData.quantity !== null) {
+                                    updates.quantity = Math.max(0, Number(productData.quantity) - orderQty);
+                                }
+                                // If neither is present, default to stock
+                                if (updates.stock === undefined && updates.quantity === undefined) {
+                                    updates.stock = Math.max(0, 0 - orderQty);
+                                }
                             }
 
                             await updateDoc(productRef, updates);
@@ -734,26 +757,6 @@ export const getAddOns = async () => {
     }
 };
 
-
-
-export const getCakeWeights = async () => {
-    try {
-        const weightsRef = collection(db, 'cakeWeights');
-        const q = query(weightsRef, where('status', '==', 'active'));
-        const snapshot = await getDocs(q);
-
-        let weights = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // Sort by weight (kg)
-        weights.sort((a, b) => parseFloat(a.weight) - parseFloat(b.weight));
-
-        return weights;
-    } catch (error) {
-        console.error("Error getting cake weights:", error);
-        return [];
-    }
-};
-
 // Add these functions to your website's firebase.js
 
 // ============ ORDER CANCELLATION FUNCTIONS ============
@@ -808,14 +811,37 @@ export const cancelOrder = async (orderId, reason = '') => {
                             const orderQty = Number(item.quantity) || 1;
                             const updates = { updatedAt: serverTimestamp() };
 
-                            if (productData.stock !== undefined && productData.stock !== null) {
-                                updates.stock = Number(productData.stock) + orderQty;
-                            }
-                            if (productData.quantity !== undefined && productData.quantity !== null) {
-                                updates.quantity = Number(productData.quantity) + orderQty;
-                            }
-                            if (updates.stock === undefined && updates.quantity === undefined) {
-                                updates.stock = orderQty;
+                            // Restore weight options stock if weightOptions are present
+                            if (productData.weightOptions && Array.isArray(productData.weightOptions) && item.selectedWeight) {
+                                const updatedWeightOptions = productData.weightOptions.map(opt => {
+                                    if (String(opt.weight).trim() === String(item.selectedWeight.weight).trim()) {
+                                        const currentStock = opt.stock !== undefined && opt.stock !== null && opt.stock !== '' ? Number(opt.stock) : 0;
+                                        return {
+                                            ...opt,
+                                            stock: currentStock + orderQty
+                                        };
+                                    }
+                                    return opt;
+                                });
+                                updates.weightOptions = updatedWeightOptions;
+
+                                // Recalculate overall stock as the sum of all weight options' stocks
+                                const totalStock = updatedWeightOptions.reduce((sum, opt) => {
+                                    const optStock = opt.stock !== undefined && opt.stock !== null && opt.stock !== '' ? Number(opt.stock) : 0;
+                                    return sum + optStock;
+                                }, 0);
+                                updates.stock = totalStock;
+                                updates.quantity = totalStock;
+                            } else {
+                                if (productData.stock !== undefined && productData.stock !== null) {
+                                    updates.stock = Number(productData.stock) + orderQty;
+                                }
+                                if (productData.quantity !== undefined && productData.quantity !== null) {
+                                    updates.quantity = Number(productData.quantity) + orderQty;
+                                }
+                                if (updates.stock === undefined && updates.quantity === undefined) {
+                                    updates.stock = orderQty;
+                                }
                             }
 
                             await updateDoc(productRef, updates);

@@ -24,7 +24,7 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
   };
 
   const offerActive = hasActiveOffer();
-  
+
   // Show starting price (base price for 1kg)
   const displayPrice = offerActive && product.offerPrice ? product.offerPrice : product.price;
   const originalPrice = product.price;
@@ -89,7 +89,7 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
   };
 
   return (
-    <div 
+    <div
       onClick={() => onClick && onClick(product)}
       className="group relative bg-white rounded-[2rem] p-3.5 transition-all duration-300 hover:shadow-2xl border border-gray-100 hover:border-rose-gold/20 hover:-translate-y-1.5 cursor-pointer flex flex-col justify-between"
     >
@@ -103,7 +103,7 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
             onError={(e) => { e.target.src = '/placeholder.png'; }}
             loading="lazy"
           />
-          
+
           {/* Pulsing Offer Badge */}
           {offerActive && product.offerDiscount && (
             <div className="absolute top-3 right-12 z-10">
@@ -127,10 +127,10 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
             className="absolute top-3 right-3 w-8 h-8 bg-white/70 hover:bg-white backdrop-blur-md rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer border border-white/30"
             aria-label="Add to wishlist"
           >
-            <svg 
-              className={`w-4 h-4 transition-all duration-300 ${isInWishlist ? 'fill-rose-gold text-rose-gold scale-110' : 'text-gray-500 hover:text-rose-gold'}`} 
-              fill={isInWishlist ? "currentColor" : "none"} 
-              stroke="currentColor" 
+            <svg
+              className={`w-4 h-4 transition-all duration-300 ${isInWishlist ? 'fill-rose-gold text-rose-gold scale-110' : 'text-gray-500 hover:text-rose-gold'}`}
+              fill={isInWishlist ? "currentColor" : "none"}
+              stroke="currentColor"
               viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -155,16 +155,16 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 mt-1">
             <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">⚖️ {displayWeight}</span>
           </div>
-          
+
           <p className="text-gray-400 text-xs line-clamp-2 mt-1.5 leading-relaxed font-medium">{product.description}</p>
-          
+
           {offerActive && product.offerDescription && (
             <p className="text-[9px] font-bold text-green-600 mt-1.5 flex items-center gap-1 uppercase tracking-wider">
-               <span>✨</span> {product.offerDescription}
+              <span>✨</span> {product.offerDescription}
             </p>
           )}
         </div>

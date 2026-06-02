@@ -51,7 +51,9 @@ const Footer = ({ logo }) => {
     { name: 'Menu', path: '/menu' },
     { name: 'About Us', path: '/about' },
     { name: 'Contact', path: '/contact' },
-    { name: 'All Products', path: '/all-products' }
+    { name: 'All Products', path: '/all-products' },
+    { name: 'Same-Day Delivery Guide', path: '/bangalore-best-same-day-cake-delivery-online' },
+    { name: 'Best Chocolate Cakes', path: '/best-chocolate-cake-online-bengaluru-same-day-delivery' }
   ];
 
   const serviceLinks = [

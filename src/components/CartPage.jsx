@@ -26,10 +26,17 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
 
     const getItemPrice = (item) => {
         const active = isOfferActive(item);
+        let basePrice = 0;
         if (active) {
-            return item.selectedWeight?.offerPrice || item.offerPrice || item.selectedWeight?.price || item.price || 0;
+            basePrice = item.selectedWeight?.offerPrice || item.offerPrice || item.selectedWeight?.price || item.price || 0;
+        } else {
+            basePrice = item.selectedWeight?.price || item.price || 0;
         }
-        return item.selectedWeight?.price || item.price || 0;
+
+        if (item.isEggless && item.egglessOption && item.egglessExtra) {
+            basePrice += parseFloat(item.egglessExtra);
+        }
+        return basePrice;
     };
 
     const [formData, setFormData] = useState({
@@ -73,7 +80,9 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
     const updateQuantity = (id, delta) => {
         setCart(prev => prev.map(item => {
             if (item.id === id) {
-                const stockLimit = item.stock !== undefined && item.stock !== null ? Number(item.stock) : 99;
+                const stockLimit = (item.selectedWeight && item.selectedWeight.stock !== undefined && item.selectedWeight.stock !== null)
+                    ? Number(item.selectedWeight.stock)
+                    : (item.stock !== undefined && item.stock !== null ? Number(item.stock) : 99);
                 const currentQty = item.quantity || 1;
                 if (delta > 0 && currentQty >= stockLimit) {
                     if (showToast) showToast(`Only ${stockLimit} available! ⚠️`);
@@ -188,8 +197,8 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                             const itemTotal = actualPrice * (item.quantity || 1);
 
                             return (
-                                <div 
-                                    key={item.id} 
+                                <div
+                                    key={item.id}
                                     className="bg-white rounded-3xl p-5 border border-gray-100 flex flex-col sm:flex-row gap-5 shadow-sm hover:shadow-md transition-shadow relative"
                                 >
                                     {/* Item Image */}
@@ -211,6 +220,11 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                                 <span className="inline-block mt-2 text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                                                     {item.selectedWeight?.label || '1 kg'}
                                                 </span>
+                                                {item.isEggless && (
+                                                    <span className="inline-block mt-2 text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-100 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ml-1">
+                                                        Eggless
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-lg font-black text-rose-gold">₹{actualPrice}</p>
@@ -245,7 +259,7 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                                     +
                                                 </button>
                                             </div>
-                                            
+
                                             <p className="text-gray-700 text-xs font-bold uppercase tracking-wider">
                                                 Subtotal: <span className="text-rose-gold text-sm font-black">₹{itemTotal}</span>
                                             </p>
