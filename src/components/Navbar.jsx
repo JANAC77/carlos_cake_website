@@ -227,6 +227,14 @@ const Navbar = ({
                         <span className="text-xs font-semibold uppercase tracking-wider">Best Chocolate Cakes</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-gold/0 group-hover:bg-rose-gold transition-all duration-350"></span>
                       </Link>
+                      <Link
+                        to="/order-customized-birthday-designer-cakes-online-bengaluru-express-delivery"
+                        onClick={() => setIsBlogsOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 group"
+                      >
+                        <span className="text-xs font-semibold uppercase tracking-wider">Custom Designer Cakes</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-gold/0 group-hover:bg-rose-gold transition-all duration-350"></span>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -442,6 +450,13 @@ const Navbar = ({
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Best Chocolate Cakes
+                </Link>
+                <Link
+                  to="/order-customized-birthday-designer-cakes-online-bengaluru-express-delivery"
+                  className="block w-full text-white/70 hover:text-rose-gold transition-colors py-1 text-xs font-semibold uppercase tracking-wider"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Custom Designer Cakes
                 </Link>
               </div>
             </div>

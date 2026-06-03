@@ -39,6 +39,7 @@ import ReelsSection from './components/ReelsSection';
 import HomeSEOContent from './components/HomeSEOContent';
 import BlogSameDayDelivery from './components/BlogSameDayDelivery';
 import BlogChocolateCake from './components/BlogChocolateCake';
+import BlogCustomizedCakes from './components/BlogCustomizedCakes';
 import { useSEO } from './hooks/useSEO';
 
 const logo = '/carlos.png';
@@ -106,6 +107,10 @@ function AppContent() {
     '/best-chocolate-cake-online-bengaluru-same-day-delivery': {
       title: 'Best Chocolate Cake Online in Bengaluru | Same-Day Delivery',
       description: 'Order the best chocolate cake online in Bengaluru with same-day delivery. Fresh, rich, and delicious cakes for birthdays, parties, and celebrations!'
+    },
+    '/order-customized-birthday-designer-cakes-online-bengaluru-express-delivery': {
+      title: 'Order Customized Designer Cakes Online Bengaluru',
+      description: 'Order customized birthday designer cakes online in Bengaluru with express delivery. Choose creative designs, delicious flavour , and timely service.'
     }
   };
 
@@ -436,6 +441,7 @@ function AppContent() {
         <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/bangalore-best-same-day-cake-delivery-online" element={<BlogSameDayDelivery />} />
         <Route path="/best-chocolate-cake-online-bengaluru-same-day-delivery" element={<BlogChocolateCake />} />
+        <Route path="/order-customized-birthday-designer-cakes-online-bengaluru-express-delivery" element={<BlogCustomizedCakes />} />
       </Routes>
 
       <Footer logo={logo} />

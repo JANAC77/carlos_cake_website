@@ -53,7 +53,8 @@ const Footer = ({ logo }) => {
     { name: 'Contact', path: '/contact' },
     { name: 'All Products', path: '/all-products' },
     { name: 'Same-Day Delivery Guide', path: '/bangalore-best-same-day-cake-delivery-online' },
-    { name: 'Best Chocolate Cakes', path: '/best-chocolate-cake-online-bengaluru-same-day-delivery' }
+    { name: 'Best Chocolate Cakes', path: '/best-chocolate-cake-online-bengaluru-same-day-delivery' },
+    { name: 'Customized Designer Cakes', path: '/order-customized-birthday-designer-cakes-online-bengaluru-express-delivery' }
   ];
 
   const serviceLinks = [
