@@ -8,7 +8,7 @@ const AboutUs = () => {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tighter mb-6">
-            About Carlos Cake Cafehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+            About Carlos Cake Cafe
           </h1>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto">
             Crafting sweet memories since 2010 with passion, quality, and love
