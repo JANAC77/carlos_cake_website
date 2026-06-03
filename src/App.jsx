@@ -211,7 +211,24 @@ function AppContent() {
       }
       showCartNotification(`🎂 ${product.name} added to cart!`);
       const cartProduct = { ...product };
-      if (!cartProduct.selectedWeight) {
+
+      // Resolve the correct 1kg price from weightOptions
+      if (cartProduct.weightOptions && cartProduct.weightOptions.length > 0) {
+        const oneKg = cartProduct.weightOptions.find(w => String(w.weight) === '1');
+        const defaultOpt = oneKg || cartProduct.weightOptions[0];
+        if (defaultOpt) {
+          const weightPrice = defaultOpt.price !== undefined ? parseFloat(defaultOpt.price) : cartProduct.price;
+          cartProduct.price = weightPrice;
+          cartProduct.selectedWeight = {
+            weight: defaultOpt.weight,
+            label: defaultOpt.weightLabel || defaultOpt.label || `${defaultOpt.weight} kg`,
+            price: weightPrice,
+            offerPrice: defaultOpt.offerPrice || null,
+            serves: defaultOpt.serves || `${Math.round(parseFloat(defaultOpt.weight) * 4)}-${Math.round(parseFloat(defaultOpt.weight) * 6)} people`,
+            stock: defaultOpt.stock !== undefined ? defaultOpt.stock : null,
+          };
+        }
+      } else if (!cartProduct.selectedWeight) {
         cartProduct.selectedWeight = {
           weight: "1",
           label: "1 kg",
@@ -220,7 +237,8 @@ function AppContent() {
           serves: "4-6 people"
         };
       }
-      return [...prevCart, { ...cartProduct, quantity: product.quantity || 1 }];
+
+      return [...prevCart, { ...cartProduct, quantity: 1 }];
     });
   };
 

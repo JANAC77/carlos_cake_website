@@ -665,8 +665,8 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
         if (checkoutItems.length === 0) return null;
 
         return checkoutItems.map((item, index) => {
-            const actualPrice = item.offerPrice || item.selectedWeight?.offerPrice || item.selectedWeight?.price || item.price || 0;
-            const originalPrice = item.selectedWeight?.price || item.price || 0;
+            const actualPrice = getItemPrice(item);
+            const originalPrice = getItemOriginalPrice(item);
             const quantity = item.quantity || 1;
             const itemTotal = actualPrice * quantity;
             const addonsTotalItem = (item.addons || []).reduce((s, a) => s + (a.price || 0), 0);

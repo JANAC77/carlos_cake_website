@@ -8,6 +8,11 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
 
   // Get display weight label for card
   const getDisplayWeight = () => {
+    if (product.weightOptions && product.weightOptions.length > 0) {
+      const oneKg = product.weightOptions.find(w => String(w.weight) === '1');
+      const defaultOpt = oneKg || product.weightOptions[0];
+      if (defaultOpt) return defaultOpt.weightLabel || defaultOpt.label || `${defaultOpt.weight} kg`;
+    }
     if (product.weight) return product.weight;
     if (product.weightLabel) return product.weightLabel;
     return '1 kg';
@@ -25,9 +30,29 @@ const ProductCard = ({ product, onClick, onAddToCart, onAddToWishlist, wishlist 
 
   const offerActive = hasActiveOffer();
 
-  // Show starting price (base price for 1kg)
-  const displayPrice = offerActive && product.offerPrice ? product.offerPrice : product.price;
-  const originalPrice = product.price;
+  // Get 1 kg price from weightOptions if available
+  const get1kgPrice = () => {
+    if (product.weightOptions && product.weightOptions.length > 0) {
+      const oneKg = product.weightOptions.find(w => String(w.weight) === '1');
+      const defaultOpt = oneKg || product.weightOptions[0];
+      if (defaultOpt) {
+        const basePrice = defaultOpt.price !== undefined ? parseFloat(defaultOpt.price) : product.price;
+        if (offerActive && product.hasOffer && product.offerDiscount) {
+          if (product.offerType === 'percentage') {
+            const discountPercent = parseFloat(product.offerDiscount);
+            return { display: Math.round(basePrice - (basePrice * discountPercent / 100)), original: basePrice };
+          } else {
+            const discountAmount = parseFloat(product.offerDiscount);
+            return { display: Math.round(basePrice - discountAmount), original: basePrice };
+          }
+        }
+        return { display: basePrice, original: basePrice };
+      }
+    }
+    return { display: offerActive && product.offerPrice ? product.offerPrice : product.price, original: product.price };
+  };
+
+  const { display: displayPrice, original: originalPrice } = get1kgPrice();
   const displayWeight = getDisplayWeight();
 
   const getOccasionBadge = (occasions) => {

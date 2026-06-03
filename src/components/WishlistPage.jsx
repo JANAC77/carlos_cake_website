@@ -2,6 +2,48 @@
 import { useState } from 'react';
 import { Trash2, ShoppingCart, ArrowLeft } from 'lucide-react';
 
+const hasActiveOffer = (product) => {
+    if (!product?.hasOffer) return false;
+    if (product?.offerValidTill) {
+        const today = new Date().toISOString().split('T')[0];
+        if (product.offerValidTill < today) return false;
+    }
+    return true;
+};
+
+const get1kgPrice = (product) => {
+    const offerActive = hasActiveOffer(product);
+    if (product.weightOptions && product.weightOptions.length > 0) {
+        const oneKg = product.weightOptions.find(w => String(w.weight) === '1');
+        const defaultOpt = oneKg || product.weightOptions[0];
+        if (defaultOpt) {
+            const basePrice = defaultOpt.price !== undefined ? parseFloat(defaultOpt.price) : product.price;
+            if (offerActive && product.hasOffer && product.offerDiscount) {
+                if (product.offerType === 'percentage') {
+                    const discountPercent = parseFloat(product.offerDiscount);
+                    return { display: Math.round(basePrice - (basePrice * discountPercent / 100)), original: basePrice };
+                } else {
+                    const discountAmount = parseFloat(product.offerDiscount);
+                    return { display: Math.round(basePrice - discountAmount), original: basePrice };
+                }
+            }
+            return { display: basePrice, original: basePrice };
+        }
+    }
+    return { display: offerActive && product.offerPrice ? product.offerPrice : product.price, original: product.price };
+};
+
+const getDisplayWeight = (product) => {
+    if (product.weightOptions && product.weightOptions.length > 0) {
+        const oneKg = product.weightOptions.find(w => String(w.weight) === '1');
+        const defaultOpt = oneKg || product.weightOptions[0];
+        if (defaultOpt) return defaultOpt.weightLabel || defaultOpt.label || `${defaultOpt.weight} kg`;
+    }
+    if (product.weight) return product.weight;
+    if (product.weightLabel) return product.weightLabel;
+    return '1 kg';
+};
+
 const WishlistPage = ({ wishlist, onRemove, onMoveToCart, onNavigate, onProductClick }) => {
     if (wishlist.length === 0) {
         return (
@@ -46,47 +88,65 @@ const WishlistPage = ({ wishlist, onRemove, onMoveToCart, onNavigate, onProductC
                 </h1>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {wishlist.map((item) => (
-                        <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
-                            <div
-                                className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer"
-                                onClick={() => onProductClick(item)}
-                            >
-                                <img
-                                    src={item.image || '/placeholder.png'}
-                                    alt={item.name}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                />
-                            </div>
+                    {wishlist.map((item) => {
+                        const { display: displayPrice, original: originalPrice } = get1kgPrice(item);
+                        const offerActive = hasActiveOffer(item);
+                        const displayWeight = getDisplayWeight(item);
 
-                            <div className="p-5">
-                                <h3
-                                    className="font-bold text-gray-900 text-lg mb-1 cursor-pointer hover:text-pink-600 transition-colors line-clamp-1"
+                        return (
+                            <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
+                                <div
+                                    className="relative aspect-square bg-gray-100 overflow-hidden cursor-pointer"
                                     onClick={() => onProductClick(item)}
                                 >
-                                    {item.name}
-                                </h3>
-                                <p className="text-gray-500 text-sm mb-3">{item.category}</p>
-                                <p className="text-xl font-bold text-pink-600 mb-4">₹{item.price}</p>
+                                    <img
+                                        src={item.image || '/placeholder.png'}
+                                        alt={item.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                </div>
 
-                                <div className="flex space-x-3">
-                                    <button
-                                        onClick={() => onMoveToCart(item)}
-                                        className="flex-1 flex items-center justify-center space-x-2 bg-pink-600 text-white py-2.5 rounded-xl font-medium hover:bg-gray-900 transition-all"
+                                <div className="p-5">
+                                    <h3
+                                        className="font-bold text-gray-900 text-lg mb-1 cursor-pointer hover:text-pink-600 transition-colors line-clamp-1"
+                                        onClick={() => onProductClick(item)}
                                     >
-                                        <ShoppingCart className="w-4 h-4" />
-                                        <span>Move to Cart</span>
-                                    </button>
-                                    <button
-                                        onClick={() => onRemove(item.id)}
-                                        className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                        {item.name}
+                                    </h3>
+                                    <p className="text-gray-500 text-sm mb-2">{item.category}</p>
+                                    
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">⚖️ {displayWeight}</span>
+                                    </div>
+
+                                    {offerActive && displayPrice !== originalPrice ? (
+                                        <div className="flex items-baseline space-x-2 mb-4">
+                                            <span className="text-xl font-bold text-pink-600">₹{displayPrice}</span>
+                                            <span className="text-sm text-gray-400 line-through">₹{originalPrice}</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xl font-bold text-pink-600 mb-4">₹{displayPrice}</p>
+                                    )}
+
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => onMoveToCart(item)}
+                                            className="flex-1 flex items-center justify-center space-x-2 bg-pink-600 text-white py-2.5 rounded-xl font-medium hover:bg-gray-900 transition-all cursor-pointer"
+                                        >
+                                            <ShoppingCart className="w-4 h-4" />
+                                            <span>Move to Cart</span>
+                                        </button>
+                                        <button
+                                            onClick={() => onRemove(item.id)}
+                                            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>
