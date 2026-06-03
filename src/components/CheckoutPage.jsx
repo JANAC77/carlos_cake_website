@@ -46,7 +46,6 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
     // Add-ons state
     const [selectedAddons, setSelectedAddons] = useState([]);
-    const [cakeMessage, setCakeMessage] = useState('');
     const [occasion, setOccasion] = useState('');
     const [availableAddOns, setAvailableAddOns] = useState([]);
     const [loadingAddOns, setLoadingAddOns] = useState(true);
@@ -71,7 +70,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                 description: buyNowProduct.description || '',
                 quantity: buyNowQuantity || 1,
                 addons: selectedAddons || [],
-                cakeMessage: cakeMessage || '',
+                cakeMessage: buyNowProduct.cakeMessage || '',
                 occasion: occasion || '',
                 isEggless: buyNowProduct.isEggless || false,
                 egglessOption: buyNowProduct.egglessOption || false,
@@ -432,6 +431,7 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
             deliveryDate: orderSchedule.date || '',
             deliveryTimeSlot: orderSchedule.time || '',
             isPreOrder: orderSchedule.isPreOrder || false,
+            cakeMessage: checkoutItems.find(item => item.cakeMessage)?.cakeMessage || '',
             items: checkoutItems.map(item => {
                 const cleanItem = {
                     id: item.id || null,
@@ -649,6 +649,9 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
 
             if (item.addons && item.addons.length > 0) {
                 itemsText += `   Add-ons: ${item.addons.map(a => `${a.name}(+₹${a.price})`).join(', ')}\n`;
+            }
+            if (item.cakeMessage) {
+                itemsText += `   Message on Cake: "${item.cakeMessage}"\n`;
             }
         });
 
@@ -1047,18 +1050,6 @@ const CheckoutPage = ({ cart = [], user, onNavigate, showToast, clearCartAfterOr
                                             No add-ons available
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Cake Message */}
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Message on Cake</label>
-                                    <input
-                                        type="text"
-                                        value={cakeMessage}
-                                        onChange={(e) => setCakeMessage(e.target.value)}
-                                        placeholder="e.g., Happy Birthday! 🎂"
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-pink-500"
-                                    />
                                 </div>
 
                                 {/* Selected Add-ons Summary */}

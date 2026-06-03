@@ -225,6 +225,14 @@ const CartPage = ({ cart, setCart, user, onNavigate, showToast }) => {
                                                         Eggless
                                                     </span>
                                                 )}
+                                                {item.cakeMessage && (
+                                                    <div className="block mt-2">
+                                                        <span className="text-[10px] text-purple-600 font-semibold bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100/50 inline-flex items-center gap-1">
+                                                            <span>💬 Message:</span>
+                                                            <span>"{item.cakeMessage}"</span>
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-lg font-black text-rose-gold">₹{actualPrice}</p>

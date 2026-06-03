@@ -217,8 +217,8 @@ function AppContent() {
       showCartNotification(`🎂 ${product.name} added to cart!`);
       const cartProduct = { ...product };
 
-      // Resolve the correct 1kg price from weightOptions
-      if (cartProduct.weightOptions && cartProduct.weightOptions.length > 0) {
+      // Resolve the correct 1kg price from weightOptions ONLY if selectedWeight is NOT already set
+      if (!cartProduct.selectedWeight && cartProduct.weightOptions && cartProduct.weightOptions.length > 0) {
         const oneKg = cartProduct.weightOptions.find(w => String(w.weight) === '1');
         const defaultOpt = oneKg || cartProduct.weightOptions[0];
         if (defaultOpt) {
@@ -243,7 +243,8 @@ function AppContent() {
         };
       }
 
-      return [...prevCart, { ...cartProduct, quantity: 1 }];
+      const finalQuantity = product.quantity !== undefined ? product.quantity : 1;
+      return [...prevCart, { ...cartProduct, quantity: finalQuantity }];
     });
   };
 

@@ -19,6 +19,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
   const [weightOptions, setWeightOptions] = useState([]);
   const [loadingWeights, setLoadingWeights] = useState(true);
   const [isEggless, setIsEggless] = useState(false);
+  const [cakeMessage, setCakeMessage] = useState('');
 
   useEffect(() => {
     console.log('ProductDetails mounted, isLoggedIn:', isLoggedIn);
@@ -35,7 +36,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
         product: productData || product,
         quantity: quantity,
         productId: id,
-        selectedWeight: selectedWeight
+        selectedWeight: selectedWeight,
+        cakeMessage: cakeMessage || ''
       }));
       navigate('/login');
       return false;
@@ -167,7 +169,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
       alert('Please select cake weight');
       return;
     }
-    if (requireLogin('addToCart', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
+    if (requireLogin('addToCart', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice(), cakeMessage: cakeMessage || '' })) {
       const itemToAdd = weightOptions.length > 0
         ? {
           ...product,
@@ -178,14 +180,16 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
           originalPrice: getOriginalPrice(),
           hasOffer: product?.hasOffer,
           offerDiscount: product?.offerDiscount,
-          offerDescription: product?.offerDescription
+          offerDescription: product?.offerDescription,
+          cakeMessage: cakeMessage || ''
         }
         : {
           ...product,
           quantity,
           isEggless: product.egglessOption ? isEggless : false,
           price: getDisplayPrice(),
-          originalPrice: getOriginalPrice()
+          originalPrice: getOriginalPrice(),
+          cakeMessage: cakeMessage || ''
         };
       onAddToCart(itemToAdd);
       const weightText = selectedWeight ? ` (${selectedWeight.label})` : '';
@@ -199,7 +203,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
       alert('Please select cake weight');
       return;
     }
-    if (requireLogin('buyNow', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice() })) {
+    if (requireLogin('buyNow', { ...product, quantity, selectedWeight, isEggless: product.egglessOption ? isEggless : false, price: getDisplayPrice(), originalPrice: getOriginalPrice(), cakeMessage: cakeMessage || '' })) {
       navigate('/checkout', {
         state: {
           product: {
@@ -215,7 +219,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             egglessExtra: product.egglessExtra || 0,
             hasOffer: product?.hasOffer,
             offerDiscount: product?.offerDiscount,
-            offerDescription: product?.offerDescription
+            offerDescription: product?.offerDescription,
+            cakeMessage: cakeMessage || ''
           },
           quantity: quantity,
           isBuyNow: true
@@ -379,10 +384,8 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                 <span className="text-xs font-bold uppercase tracking-wider">Share</span>
               </button>
             </div>
-          </div>
-
-          {/* Right Column: Interactive Details Panel */}
-          <div className="lg:col-span-6 space-y-8">
+          </div>          {/* Right Column: Interactive Details Panel */}
+          <div className="lg:col-span-6 space-y-5">
 
             {/* Header Details */}
             <div>
@@ -390,7 +393,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                 {product.categoryName || product.category || 'Premium Cake'}
               </span>
 
-              <h1 className="text-3xl lg:text-4xl font-extrabold text-obsidian-dark mt-4 mb-3 font-['Outfit'] tracking-tight leading-tight">
+              <h1 className="text-2xl lg:text-3xl font-extrabold text-obsidian-dark mt-3 mb-2 font-['Outfit'] tracking-tight leading-tight">
                 {product.name}
               </h1>
 
@@ -410,35 +413,30 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             </div>
 
             {/* Pricing Card */}
-            <div className="glass-panel-light rounded-3xl p-6 border border-white/60 bg-gradient-to-br from-white/90 to-rose-50/30 shadow-premium-glow relative overflow-hidden">
+            <div className="glass-panel-light rounded-2xl p-4 px-5 border border-white/60 bg-gradient-to-br from-white/90 to-rose-50/30 shadow-premium-glow relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-rose-200/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="block text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Total Price</span>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-extrabold text-gradient-rose-gold">₹{getDisplayPrice() * quantity}</span>
+                  <span className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Total Price</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl md:text-3xl font-extrabold text-gradient-rose-gold">₹{getDisplayPrice() * quantity}</span>
                     {getDisplayPrice() !== getOriginalPrice() && (
-                      <span className="text-neutral-400 line-through text-lg font-medium">₹{getOriginalPrice() * quantity}</span>
+                      <span className="text-neutral-400 line-through text-sm font-medium">₹{getOriginalPrice() * quantity}</span>
                     )}
                   </div>
                   {quantity > 1 && (
-                    <p className="text-xs text-neutral-500 mt-2 font-medium">
+                    <p className="text-[10px] text-neutral-400 mt-1 font-medium">
                       ₹{getDisplayPrice()} × {quantity} unit{quantity > 1 ? 's' : ''}
-                    </p>
-                  )}
-                  {selectedWeight && (
-                    <p className="text-[11px] text-neutral-400 mt-1 font-medium">
-                      Weight Option: {selectedWeight.label} (Base: ₹{getDisplayPrice()})
                     </p>
                   )}
                 </div>
 
                 {offerActive && (
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className="bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-wider">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
                       Save {product.offerType === 'percentage' ? `${product.offerDiscount}%` : `₹${product.offerDiscount}`}
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                    <span className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
                       🎉 Special Offer Applied
                     </span>
                   </div>
@@ -464,12 +462,11 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
 
             {/* WEIGHT OPTIONS SELECTOR */}
             {!loadingWeights && weightOptions.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="block text-xs font-bold text-obsidian-dark uppercase tracking-widest">Select Cake Weight</label>
-                  <span className="text-xs text-rose-gold font-bold uppercase tracking-wider">Required *</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {weightOptions.map((weight) => {
                     const isSelected = selectedWeight?.id === weight.id;
                     const isOptOutOfStock = weight.stock !== undefined && weight.stock !== null && Number(weight.stock) <= 0;
@@ -484,36 +481,34 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                             setQuantity(Math.max(1, limit));
                           }
                         }}
-                        className={`relative flex flex-col justify-center p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${isSelected
-                            ? 'border-rose-gold bg-rose-50/25 shadow-premium-glow ring-1 ring-rose-gold scale-[1.02]'
-                            : 'border-neutral-200 bg-white hover:border-rose-gold/40 hover:bg-rose-50/5'
+                        className={`relative flex flex-col justify-center p-3 rounded-xl border text-left transition-all duration-300 cursor-pointer ${isSelected
+                          ? 'border-rose-gold bg-rose-50/25 shadow-premium-glow ring-1 ring-rose-gold scale-[1.01]'
+                          : 'border-neutral-200 bg-white hover:border-rose-gold/40 hover:bg-rose-50/5'
                           }`}
                       >
                         {/* Checkmark indicator */}
-                        <div className="absolute top-1/2 -translate-y-1/2 right-4 flex items-center justify-center">
-                          <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'border-rose-gold bg-rose-gold text-white' : 'border-neutral-300 bg-white'
+                        <div className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center justify-center">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'border-rose-gold bg-rose-gold text-white' : 'border-neutral-300 bg-white'
                             }`}>
                             {isSelected && (
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                              <svg className="w-2 h-2" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             )}
                           </div>
                         </div>
 
-                        <div className="space-y-1 pr-8">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-extrabold text-obsidian-dark text-base">{weight.label}</span>
+                        <div className="space-y-0.5 pr-6">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="font-extrabold text-obsidian-dark text-sm">{weight.label}</span>
                             {isOptOutOfStock && (
-                              <span className="text-[8px] font-extrabold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-md border border-red-100 uppercase tracking-wider">Sold Out</span>
+                              <span className="text-[7px] font-extrabold text-red-500 bg-red-50 px-1 py-0.5 rounded-md border border-red-100 uppercase tracking-wider">Sold Out</span>
                             )}
                           </div>
-                          <p className="text-[10px] text-neutral-400 font-semibold flex items-center gap-1">
+                          <p className="text-[9px] text-neutral-400 font-semibold flex items-center gap-0.5">
                             <span>👥</span> {weight.serves}
                           </p>
                         </div>
-
-
                       </button>
                     );
                   })}
@@ -522,53 +517,68 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             )}
 
             {loadingWeights && (
-              <div className="mb-6 flex justify-center py-6 glass-panel-light rounded-2xl">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-rose-gold border-t-transparent"></div>
+              <div className="mb-4 flex justify-center py-4 glass-panel-light rounded-xl">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-rose-gold border-t-transparent"></div>
               </div>
             )}
 
             {/* DIETARY PREFERENCE */}
             {product?.egglessOption && (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <label className="block text-xs font-bold text-obsidian-dark uppercase tracking-widest">Dietary Preference</label>
-                <div className="flex gap-4">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setIsEggless(false)}
-                    className={`flex-1 py-3.5 px-4 rounded-2xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer ${!isEggless
-                        ? 'border-rose-gold bg-rose-50/20 text-rose-gold shadow-sm ring-1 ring-rose-gold scale-[1.01]'
-                        : 'border-neutral-200 bg-white text-neutral-600 hover:border-rose-gold/30'
+                    className={`flex-1 py-2.5 px-3 rounded-xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-[10px] flex items-center justify-center gap-1.5 cursor-pointer ${!isEggless
+                      ? 'border-rose-gold bg-rose-50/20 text-rose-gold shadow-sm ring-1 ring-rose-gold'
+                      : 'border-neutral-200 bg-white text-neutral-600 hover:border-rose-gold/30'
                       }`}
                   >
-                    <span className="text-base">🥚</span> With Egg
+                    <span className="text-sm">🥚</span> With Egg
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEggless(true)}
-                    className={`flex-1 py-3.5 px-4 rounded-2xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer ${isEggless
-                        ? 'border-rose-gold bg-rose-50/20 text-rose-gold shadow-sm ring-1 ring-rose-gold scale-[1.01]'
-                        : 'border-neutral-200 bg-white text-neutral-600 hover:border-rose-gold/30'
+                    className={`flex-1 py-2.5 px-3 rounded-xl border text-center transition-all duration-300 font-bold uppercase tracking-wider text-[10px] flex items-center justify-center gap-1.5 cursor-pointer ${isEggless
+                      ? 'border-rose-gold bg-rose-50/20 text-rose-gold shadow-sm ring-1 ring-rose-gold'
+                      : 'border-neutral-200 bg-white text-neutral-600 hover:border-rose-gold/30'
                       }`}
                   >
-                    <span className="text-base">🌱</span> Eggless {product.egglessExtra > 0 ? `(+₹${product.egglessExtra})` : ''}
+                    <span className="text-sm">🌱</span> Eggless {product.egglessExtra > 0 ? `(+₹${product.egglessExtra})` : ''}
                   </button>
                 </div>
               </div>
             )}
 
+            {/* MESSAGE ON CAKE */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold text-obsidian-dark uppercase tracking-widest">Message on Cake</label>
+                <span className="text-[10px] text-neutral-400 font-semibold">{cakeMessage.length}/30 chars</span>
+              </div>
+              <input
+                type="text"
+                value={cakeMessage}
+                onChange={(e) => setCakeMessage(e.target.value.slice(0, 30))}
+                placeholder="e.g. Happy Birthday Name (Max 30 chars)"
+                className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-xs font-semibold text-obsidian-dark focus:outline-none focus:border-rose-gold focus:ring-1 focus:ring-rose-gold/30 transition-all shadow-sm"
+              />
+            </div>
+
             {/* QUANTITY */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="block text-xs font-bold text-obsidian-dark uppercase tracking-widest">Quantity</label>
               <div className="flex items-center space-x-4">
-                <div className={`flex items-center bg-white border border-neutral-200 rounded-2xl p-1 shadow-sm ${isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`flex items-center bg-white border border-neutral-200 rounded-xl p-0.5 shadow-sm ${isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 rounded-xl hover:bg-neutral-50 flex items-center justify-center text-neutral-500 hover:text-obsidian-dark text-lg font-bold transition-colors cursor-pointer"
+                    className="w-8 h-8 rounded-lg hover:bg-neutral-50 flex items-center justify-center text-neutral-500 hover:text-obsidian-dark text-base font-bold transition-colors cursor-pointer"
                     disabled={isOutOfStock}
                   >
                     -
                   </button>
-                  <span className="px-6 font-bold text-obsidian-dark min-w-[50px] text-center">
+                  <span className="px-4 font-bold text-obsidian-dark min-w-[36px] text-center text-sm">
                     {isOutOfStock ? 0 : quantity}
                   </span>
                   <button
@@ -579,9 +589,9 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                       }
                       setQuantity(quantity + 1);
                     }}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-colors cursor-pointer ${quantity >= stockLimit
-                        ? 'text-neutral-300 cursor-not-allowed'
-                        : 'text-neutral-500 hover:text-obsidian-dark hover:bg-neutral-50'
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-base font-bold transition-colors cursor-pointer ${quantity >= stockLimit
+                      ? 'text-neutral-300 cursor-not-allowed'
+                      : 'text-neutral-500 hover:text-obsidian-dark hover:bg-neutral-50'
                       }`}
                     disabled={isOutOfStock || quantity >= stockLimit}
                   >
@@ -589,12 +599,12 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                   </button>
                 </div>
                 {isOutOfStock ? (
-                  <span className="text-sm text-red-500 font-bold bg-red-50 border border-red-100 px-3 py-1.5 rounded-xl uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                  <span className="text-[10px] text-red-500 font-bold bg-red-50 border border-red-100 px-2.5 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
                     ⚠️ Out of Stock
                   </span>
                 ) : (
                   stockLimit < 10 && (
-                    <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider">
+                    <span className="text-[10px] text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-lg font-bold uppercase tracking-wider">
                       Only {stockLimit} Left!
                     </span>
                   )
@@ -603,16 +613,16 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
             </div>
 
             {/* BUTTON CONTROLS */}
-            <div className="space-y-4 pt-2">
-              <div className="flex flex-col sm:flex-row gap-4">
+            <div className="space-y-3 pt-1">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all duration-300 cursor-pointer shadow-md flex items-center justify-center gap-2 ${isOutOfStock
-                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none'
-                      : isInCart
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100/50'
-                        : 'bg-obsidian-dark hover:bg-neutral-800 text-white hover:-translate-y-0.5'
+                  className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 cursor-pointer shadow-md flex items-center justify-center gap-2 ${isOutOfStock
+                    ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed shadow-none'
+                    : isInCart
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100/50'
+                      : 'bg-obsidian-dark hover:bg-neutral-800 text-white hover:-translate-y-0.5'
                     }`}
                 >
                   {isInCart ? (
@@ -629,7 +639,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
                 <button
                   onClick={handleBuyNow}
                   disabled={isOutOfStock}
-                  className={`flex-1 btn-premium py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all duration-300 cursor-pointer text-white shadow-premium-glow bg-gradient-to-r from-rose-gold to-pink-600 hover:-translate-y-0.5 ${isOutOfStock ? 'opacity-50 cursor-not-allowed shadow-none from-neutral-300 to-neutral-400' : ''
+                  className={`flex-1 btn-premium py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 cursor-pointer text-white shadow-premium-glow bg-gradient-to-r from-rose-gold to-pink-600 hover:-translate-y-0.5 ${isOutOfStock ? 'opacity-50 cursor-not-allowed shadow-none from-neutral-300 to-neutral-400' : ''
                     }`}
                 >
                   ⚡ Buy Now
@@ -637,7 +647,7 @@ const ProductDetails = ({ onAddToCart, onAddToWishlist, wishlist = [], cart = []
               </div>
 
               {!isLoggedIn && (
-                <p className="text-center text-[11px] text-amber-600 bg-amber-50/50 border border-amber-100/30 py-2.5 rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
+                <p className="text-center text-[10px] text-amber-600 bg-amber-50/50 border border-amber-100/30 py-2 rounded-xl flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider">
                   <span>🔒</span> Login required for checkout
                 </p>
               )}
