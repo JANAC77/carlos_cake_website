@@ -8,7 +8,7 @@ const AboutUs = () => {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-['Outfit'] font-black text-gray-900 uppercase tracking-tighter mb-6">
-            About Carlos Cake Cafe
+            About Carlos Cake Cafehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
           </h1>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto">
             Crafting sweet memories since 2010 with passion, quality, and love
@@ -33,9 +33,9 @@ const AboutUs = () => {
           </div>
           <div className="relative">
             <div className="absolute -inset-4 bg-pink-100 rounded-[2rem] -rotate-3"></div>
-            <img 
-              src="/premium_cake_hero_1777274022400.png" 
-              alt="Our Story" 
+            <img
+              src="/premium_cake_hero_1777274022400.png"
+              alt="Our Story"
               className="relative z-10 w-full h-full object-cover rounded-2xl shadow-xl"
             />
           </div>
