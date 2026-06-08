@@ -938,7 +938,7 @@ export const getAddOnsByOccasion = async (occasionName) => {
 // Remove orderBy that requires index
 export const getMenuCategories = async () => {
     try {
-        const categoriesRef = collection(db, 'menuCategories');
+        const categoriesRef = collection(db, 'categories');
         const q = query(categoriesRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
         // Sort in JavaScript instead of Firestore
@@ -946,7 +946,7 @@ export const getMenuCategories = async () => {
         categories.sort((a, b) => (a.order || 0) - (b.order || 0));
         return categories;
     } catch (error) {
-        console.error("Error getting menu categories:", error);
+        console.error("Error getting menu categories from categories collection:", error);
         return [];
     }
 };
@@ -954,28 +954,47 @@ export const getMenuCategories = async () => {
 // Similarly for getMenuItems if needed
 export const getMenuItems = async (categoryId = null) => {
     try {
-        let constraints = [where('status', '==', 'active')];
-        if (categoryId) {
-            constraints.push(where('categoryId', '==', categoryId));
-        }
-        const itemsRef = collection(db, 'menuItems');
-        const q = query(itemsRef, ...constraints);
+        const productsRef = collection(db, 'products');
+        const q = query(productsRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
-        let items = snapshot.docs.map(doc => sanitizeItemImages({ id: doc.id, ...doc.data() }));
+        let items = snapshot.docs.map(doc => {
+            const data = doc.data();
+            const weightText = data.weightOptions && data.weightOptions.length > 0
+                ? (data.weightOptions[0].label || `${data.weightOptions[0].weight} kg`)
+                : '1 kg';
+            return sanitizeItemImages({
+                id: doc.id,
+                name: data.name || '',
+                price: data.price || 0,
+                categoryId: data.categoryId || '',
+                weight: weightText,
+                weightOptions: data.weightOptions || [],
+                description: data.description || '',
+                image: data.image || '',
+                imageId: data.imageId || '',
+                egglessOption: data.egglessOption !== false,
+                egglessExtra: data.egglessExtra || 50,
+                isPopular: data.isPopular || false,
+                status: data.status || 'active'
+            });
+        });
+        if (categoryId) {
+            items = items.filter(item => item.categoryId === categoryId);
+        }
         // Sort by name or price in JavaScript
         items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         return items;
     } catch (error) {
-        console.error("Error getting menu items:", error);
+        console.error("Error getting menu items from products:", error);
         return [];
     }
 };
 
 export const getGalleryImages = async () => {
     try {
-        const galleryRef = collection(db, 'gallery');
+        const productsRef = collection(db, 'products');
         // Only filter by status - no orderBy
-        const q = query(galleryRef, where('status', '==', 'active'));
+        const q = query(productsRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
 
         // Get categories for mapping
@@ -986,9 +1005,16 @@ export const getGalleryImages = async () => {
             const category = categories.find(c => c.id === data.categoryId);
             return sanitizeItemImages({
                 id: doc.id,
-                ...data,
+                title: data.name || '',
+                description: data.description || '',
+                categoryId: data.categoryId || '',
                 categoryName: category?.name || 'Uncategorized',
-                categoryIcon: category?.image || null
+                categoryIcon: category?.image || null,
+                image: data.image || '',
+                imageId: data.imageId || '',
+                featured: data.featured || false,
+                status: data.status || 'active',
+                createdAt: data.createdAt
             });
         });
 
@@ -1005,7 +1031,7 @@ export const getGalleryImages = async () => {
 
         return images;
     } catch (error) {
-        console.error("Error getting gallery images:", error);
+        console.error("Error getting gallery images from products:", error);
         return [];
     }
 };
@@ -1013,13 +1039,9 @@ export const getGalleryImages = async () => {
 // Get featured gallery images for homepage - WITHOUT orderBy
 export const getFeaturedGalleryImages = async (limit = 6) => {
     try {
-        const galleryRef = collection(db, 'gallery');
-        // Filter by status and featured
-        const q = query(
-            galleryRef,
-            where('status', '==', 'active'),
-            where('featured', '==', true)
-        );
+        const productsRef = collection(db, 'products');
+        // Filter by status
+        const q = query(productsRef, where('status', '==', 'active'));
         const snapshot = await getDocs(q);
 
         const categories = await getCategories();
@@ -1029,10 +1051,17 @@ export const getFeaturedGalleryImages = async (limit = 6) => {
             const category = categories.find(c => c.id === data.categoryId);
             return sanitizeItemImages({
                 id: doc.id,
-                ...data,
-                categoryName: category?.name || 'Uncategorized'
+                title: data.name || '',
+                description: data.description || '',
+                categoryId: data.categoryId || '',
+                categoryName: category?.name || 'Uncategorized',
+                image: data.image || '',
+                imageId: data.imageId || '',
+                featured: data.featured || false,
+                status: data.status || 'active',
+                createdAt: data.createdAt
             });
-        });
+        }).filter(img => img.featured);
 
         // Sort by date (newest first) and limit
         images.sort((a, b) => {
@@ -1043,7 +1072,7 @@ export const getFeaturedGalleryImages = async (limit = 6) => {
 
         return images.slice(0, limit);
     } catch (error) {
-        console.error("Error getting featured gallery images:", error);
+        console.error("Error getting featured gallery images from products:", error);
         return [];
     }
 };

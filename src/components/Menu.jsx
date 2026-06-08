@@ -170,18 +170,39 @@ const Menu = () => {
 
                                                 {/* Weight */}
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className="text-sm text-gray-600 flex items-center justify-center gap-1">
-                                                        <span>⚖️</span>
-                                                        {item.weight || '1 kg'}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1.5 justify-center items-center">
+                                                        {item.weightOptions && item.weightOptions.length > 0 ? (
+                                                            item.weightOptions.map((opt, idx) => (
+                                                                <span key={idx} className="text-sm text-gray-600 flex items-center justify-center gap-1 whitespace-nowrap min-h-[1.5rem]">
+                                                                    <span>⚖️</span>
+                                                                    {opt.label || `${opt.weight} kg`}
+                                                                </span>
+                                                            ))
+                                                        ) : (
+                                                            <span className="text-sm text-gray-600 flex items-center justify-center gap-1 whitespace-nowrap min-h-[1.5rem]">
+                                                                <span>⚖️</span>
+                                                                {item.weight || '1 kg'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* Price */}
                                                 <td className="px-6 py-4 text-right">
-                                                    <div>
-                                                        <span className="text-lg font-bold text-pink-600">₹{item.price}</span>
+                                                    <div className="flex flex-col gap-1.5 items-end justify-center">
+                                                        {item.weightOptions && item.weightOptions.length > 0 ? (
+                                                            item.weightOptions.map((opt, idx) => (
+                                                                <div key={idx} className="min-h-[1.5rem] flex items-center">
+                                                                    <span className="text-base font-bold text-pink-600">₹{opt.price}</span>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="min-h-[1.5rem] flex items-center">
+                                                                <span className="text-lg font-bold text-pink-600">₹{item.price}</span>
+                                                            </div>
+                                                        )}
                                                         {item.egglessOption && (
-                                                            <p className="text-xs text-gray-400">+₹{item.egglessExtra} eggless</p>
+                                                            <p className="text-[10px] text-gray-400 mt-1">+₹{item.egglessExtra} eggless</p>
                                                         )}
                                                     </div>
                                                 </td>
