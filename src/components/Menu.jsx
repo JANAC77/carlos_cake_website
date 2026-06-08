@@ -113,30 +113,31 @@ const Menu = () => {
                             {category.description && (
                                 <p className="text-center text-gray-500 mb-8">{category.description}</p>
                             )}
-
                             {/* Table Layout */}
-                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                                <table className="w-full">
-                                    <thead className="bg-gradient-to-r from-pink-50 to-rose-50 border-b border-gray-200">
+                            <div className="w-full overflow-x-auto bg-white rounded-2xl shadow-lg border border-gray-100">
+                                <table className="w-full min-w-[750px] md:min-w-0">
+                                    <thead className="bg-gradient-to-r from-pink-50/50 to-rose-50/50 border-b border-gray-100">
                                         <tr>
-                                            <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Item</th>
-                                            <th className="text-left px-6 py-4 text-sm font-bold text-gray-700">Description</th>
-                                            <th className="text-center px-6 py-4 text-sm font-bold text-gray-700">Weight</th>
-                                            <th className="text-right px-6 py-4 text-sm font-bold text-gray-700">Price</th>
-                                            <th className="text-center px-6 py-4 text-sm font-bold text-gray-700">Eggless</th>
+                                            <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-500">Item</th>
+                                            <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-500">Description</th>
+                                            <th className="text-center px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-500">Weight</th>
+                                            <th className="text-center px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-500">Price</th>
+                                            <th className="text-center px-6 py-4 text-xs font-black uppercase tracking-wider text-gray-500">Eggless</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
+                                    <tbody className="divide-y divide-gray-50">
                                         {categoryItems.map((item, index) => (
                                             <tr
                                                 key={item.id}
-                                                className={`hover:bg-pink-50/30 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                                                    }`}
+                                                onClick={() => navigate(`/product/${item.id}`)}
+                                                className={`hover:bg-pink-50/20 transition-all duration-200 cursor-pointer ${
+                                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'
+                                                }`}
                                             >
                                                 {/* Item Name with Image */}
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">
+                                                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-pink-50 flex-shrink-0 border border-pink-100/30">
                                                             {item.image ? (
                                                                 <img
                                                                     src={item.image}
@@ -150,10 +151,10 @@ const Menu = () => {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <div>
-                                                            <p className="font-bold text-gray-900">{item.name}</p>
+                                                        <div className="min-w-[130px]">
+                                                            <p className="font-extrabold text-gray-900 group-hover:text-pink-600 transition-colors">{item.name}</p>
                                                             {item.isPopular && (
-                                                                <span className="inline-block mt-1 text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">
+                                                                <span className="inline-block mt-1 text-[10px] bg-yellow-50 text-yellow-600 border border-yellow-100 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                                                                     ⭐ Popular
                                                                 </span>
                                                             )}
@@ -163,24 +164,24 @@ const Menu = () => {
 
                                                 {/* Description */}
                                                 <td className="px-6 py-4">
-                                                    <p className="text-sm text-gray-500 line-clamp-2">
+                                                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed min-w-[200px]">
                                                         {item.description || '-'}
                                                     </p>
                                                 </td>
 
                                                 {/* Weight */}
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="flex flex-col gap-1.5 justify-center items-center">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-2 justify-center items-center">
                                                         {item.weightOptions && item.weightOptions.length > 0 ? (
                                                             item.weightOptions.map((opt, idx) => (
-                                                                <span key={idx} className="text-sm text-gray-600 flex items-center justify-center gap-1 whitespace-nowrap min-h-[1.5rem]">
-                                                                    <span>⚖️</span>
+                                                                <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200/50 min-h-[1.75rem] shadow-sm whitespace-nowrap min-w-[80px] justify-center">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
                                                                     {opt.label || `${opt.weight} kg`}
                                                                 </span>
                                                             ))
                                                         ) : (
-                                                            <span className="text-sm text-gray-600 flex items-center justify-center gap-1 whitespace-nowrap min-h-[1.5rem]">
-                                                                <span>⚖️</span>
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200/50 min-h-[1.75rem] shadow-sm whitespace-nowrap min-w-[80px] justify-center">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
                                                                 {item.weight || '1 kg'}
                                                             </span>
                                                         )}
@@ -188,35 +189,38 @@ const Menu = () => {
                                                 </td>
 
                                                 {/* Price */}
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex flex-col gap-1.5 items-end justify-center">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-2 items-center justify-center">
                                                         {item.weightOptions && item.weightOptions.length > 0 ? (
                                                             item.weightOptions.map((opt, idx) => (
-                                                                <div key={idx} className="min-h-[1.5rem] flex items-center">
-                                                                    <span className="text-base font-bold text-pink-600">₹{opt.price}</span>
-                                                                </div>
+                                                                <span key={idx} className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black bg-pink-50 text-pink-600 border border-pink-100 min-h-[1.75rem] shadow-sm whitespace-nowrap min-w-[70px]">
+                                                                    ₹{opt.price}
+                                                                </span>
                                                             ))
                                                         ) : (
-                                                            <div className="min-h-[1.5rem] flex items-center">
-                                                                <span className="text-lg font-bold text-pink-600">₹{item.price}</span>
-                                                            </div>
-                                                        )}
-                                                        {item.egglessOption && (
-                                                            <p className="text-[10px] text-gray-400 mt-1">+₹{item.egglessExtra} eggless</p>
+                                                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-black bg-pink-50 text-pink-600 border border-pink-100 min-h-[1.75rem] shadow-sm whitespace-nowrap min-w-[70px]">
+                                                                ₹{item.price}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </td>
 
                                                 {/* Eggless Available */}
-                                                <td className="px-6 py-4 text-center">
-                                                    {item.egglessOption ? (
-                                                        <span className="inline-flex items-center gap-1 text-green-600 text-sm">
-                                                            <span>✓</span>
-                                                            <span>Available</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400 text-sm">-</span>
-                                                    )}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1.5 justify-center items-center">
+                                                        {item.egglessOption ? (
+                                                            <>
+                                                                <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 border border-green-100 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                                                                    <span className="text-green-500 font-extrabold text-sm">✓</span> Available
+                                                                </span>
+                                                                <span className="inline-flex items-center gap-1 text-[9px] text-green-700 bg-green-50/80 border border-green-100 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider mt-1">
+                                                                    🌱 +₹{item.egglessExtra} eggless
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-gray-400 text-xs">-</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -226,7 +230,7 @@ const Menu = () => {
 
                             {/* No Items Message */}
                             {categoryItems.length === 0 && (
-                                <div className="text-center py-12 bg-white rounded-2xl">
+                                <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
                                     <p className="text-gray-500">No items in this category yet.</p>
                                 </div>
                             )}
